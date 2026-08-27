@@ -52,13 +52,19 @@ CYCLES = 200_000
 REPEATS = 7
 """How many repeats a median is taken over. Odd, so the median is a measurement."""
 
-FLOOR = 100_000
+FLOOR = 50_000
 """Cycles per second the model must beat, uninstrumented.
 
-Measured at 387,727 cycles per second on Python 3.14 when this was written, so
-the floor sits close to four times below it. That leaves room for a shared runner
-having a bad minute and none for a change that made the model several times
-slower.
+Two measurements set this rather than one, because the first was nearly wrong.
+On the machine it was written on the model managed 387,727 cycles per second on
+Python 3.14; on a shared runner it managed 150,445. A floor picked from the local
+figure alone sat only one and a half times under the runner, which is inside the
+noise of a machine somebody else is also using, and it would have failed on a bad
+minute rather than on a regression.
+
+So the floor is taken from the slower of the two and sits three times under it.
+That leaves room for a runner having a bad minute and none for a change that made
+the model several times slower.
 """
 
 PART_HERTZ = 20_000_000
