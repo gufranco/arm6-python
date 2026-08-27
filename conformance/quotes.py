@@ -304,14 +304,20 @@ def loaded() -> list[Claim]:
     return found
 
 
-def readable(sources: dict[str, dict[str, Any]]) -> int:
+def readable(sources: dict[str, dict[str, Any]], where: Path | None = None) -> int:
     """How many of the declared documents are on this machine.
 
     A count rather than a boolean, because the report has to be able to say that
     it looked at three documents and found none, which is a different sentence
     from having looked at nothing.
+
+    The directory is an argument because a check that reads whatever happens to
+    be on the machine has a result that depends on the machine. On a runner there
+    are no documents, so a test asserting that one is present passes on a
+    developer's disk and fails everywhere else.
     """
-    return sum(1 for one in sources.values() if (DOCUMENTS / str(one.get("file"))).exists())
+    at = DOCUMENTS if where is None else where
+    return sum(1 for one in sources.values() if (at / str(one.get("file"))).exists())
 
 
 def verify(

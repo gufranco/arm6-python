@@ -432,23 +432,27 @@ class TheLastFewPathsTest(unittest.TestCase):
     """The branches a normal run never reaches, driven so they have run once."""
 
     def test_a_declared_document_that_is_absent_is_not_counted(self) -> None:
-        held = quotes.readable({"a": {"file": "no-such-document.pdf"}})
+        with tempfile.TemporaryDirectory() as where:
+            held = quotes.readable({"a": {"file": "no-such-document.pdf"}}, Path(where))
 
-        self.assertEqual(held, 0)
+            self.assertEqual(held, 0)
 
     def test_and_one_that_is_there_is(self) -> None:
-        name = next(iter(quotes.declared().values()))
+        with tempfile.TemporaryDirectory() as where:
+            (Path(where) / "a-datasheet.pdf").write_bytes(b"x")
 
-        held = quotes.readable({"a": name})
+            held = quotes.readable({"a": {"file": "a-datasheet.pdf"}}, Path(where))
 
-        self.assertEqual(held, 1)
+            self.assertEqual(held, 1)
 
     def test_a_mixture_counts_only_the_ones_that_are_there(self) -> None:
-        name = next(iter(quotes.declared().values()))
+        with tempfile.TemporaryDirectory() as where:
+            (Path(where) / "a-datasheet.pdf").write_bytes(b"x")
+            sources = {"a": {"file": "a-datasheet.pdf"}, "b": {"file": "gone.pdf"}}
 
-        held = quotes.readable({"a": name, "b": {"file": "no-such-document.pdf"}})
+            held = quotes.readable(sources, Path(where))
 
-        self.assertEqual(held, 1)
+            self.assertEqual(held, 1)
 
     def test_a_machine_without_the_renderer_reports_nothing_rather_than_throwing(self) -> None:
         with tempfile.TemporaryDirectory() as where:
