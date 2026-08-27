@@ -1,0 +1,59 @@
+{
+  "note": "Every document this package is held to, by identity rather than by name. docs/documents.py brings each one down again and refuses anything whose digest does not match.",
+  "authority": {
+    "1": "A manufacturer document. What the maker of the part printed about it.",
+    "2": "A measurement taken off real silicon. Empty here. No ARM60 has been probed for this package.",
+    "3": "A simulation of the die. Empty here. No implementation of this architecture in reconfigurable logic is known to exist to compare against.",
+    "4": "A recording taken from a later part, which is conformance/suites.json rather than a document, so nothing in this folder occupies that rung."
+  },
+  "whyNotCarriedHere": "These are the publishers' documents, not this project's, and this repository is public. What is carried is the identity, which is what makes a copy checkable.",
+  "readOn": "2026-08-26",
+  "partsWithNoDocument": {
+    "arm600": "The core is the same. The ARM610 data sheet says outright that the CPU within ARM610 is the ARM6, and gives the ARM600 delta as five items, every one a bus or packaging difference rather than a core one. What is missing is the bus, which is what this family models a clocked part down to, and no data sheet for it has been found.",
+    "arm610": "Its data sheet is here and is a good second witness for the instruction set, which is what makes it worth writing down: the temptation is to model the part from it. Its chapter 10 gives two input clocks rather than one, two cycle types rather than four, and sequential runs interrupted on a page boundary. That bus is not the one ARM60 documents, so ARM60's instruction cycle chapter cannot be carried across.",
+    "arm61": "The ARM60 data sheet names it twice, once in the list of parts without selectable endianness and once in the list of parts supporting the early abort mechanism. Nothing else about it has been found."
+  },
+  "documents": [
+    {
+      "file": "manufacturer/arm60_gec.pdf",
+      "rung": 1,
+      "publisher": "GEC Plessey Semiconductors",
+      "title": "ARM60 Datasheet, Issue 0.81",
+      "date": "1993",
+      "retrievedFrom": "https://3dodev.com/_media/documentation/hardware/arm60_datasheet_-_gec_plessey_semiconductors.pdf",
+      "covers": ["arm60"],
+      "settles": "Everything this package models. The instruction set, the programmer's model, the memory interface, and chapter 10's per-instruction per-cycle bus behaviour, which is the only manufacturer statement of this part's bus that has been found.",
+      "sha256": "315dbff7b6259a73c5f2a188c997e52d73375c660334915b887f3dafcf5b5cb0",
+      "bytes": 3520634,
+      "pages": 83,
+      "noTextLayer": "Asking pdftotext for its contents returns one newline per page: eighty three characters for eighty three pages. Nothing can search it, so conformance/quotes.py renders each cited page and reads it instead."
+    },
+    {
+      "file": "manufacturer/arm610_ddi0004d.pdf",
+      "rung": 1,
+      "publisher": "Advanced RISC Machines Ltd",
+      "title": "ARM610 Data Sheet, ARM DDI 0004D",
+      "date": "1993-08",
+      "retrievedFrom": "http://bitsavers.trailing-edge.com/pdf/acorn/ARM_DDI_0004D_ARM610_Data_Sheet_Aug93.pdf",
+      "alsoAt": "https://bitsavers.org/pdf/acorn/ARM_DDI_0004D_ARM610_Data_Sheet_Aug93.pdf, which is the address the References section links and which serves the identical file to a browser and 403 to a plain fetch. The mirror above is what a script can reach.",
+      "covers": ["arm60"],
+      "settles": "A second witness for the instruction set and the programmer's model, never for a timing. Its bus chapter describes a different machine.",
+      "sha256": "76f13ffe2bc207741814e129ffc41a9961d3e70d0df5c1f233c1473c3ee5a878",
+      "bytes": 7913341,
+      "pages": 134
+    },
+    {
+      "file": "manufacturer/arm_application_note_11.html",
+      "rung": 1,
+      "publisher": "Advanced RISC Machines Ltd",
+      "title": "Application Note 11: Differences Between ARM6 and Earlier ARM Processors",
+      "date": "undated",
+      "retrievedFrom": "https://home.marutan.net/rpcemu/Apps11vC.html",
+      "covers": ["arm60"],
+      "settles": "The four 26-bit mode encodings no data sheet tabulates, and the rule saying what an unobserved restriction does.",
+      "sha256": "41239bc21c8e33751bdc5a0977105c525f120f781cf8530fbf533f4ba1d868bb",
+      "bytes": 8729,
+      "pages": 1
+    }
+  ]
+}

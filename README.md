@@ -4,7 +4,7 @@ An ARM60 you can drive from a clock, held to its own datasheet for every instruc
 
 [![CI](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml)
 
-**1** part, **62** quoted sentences placed on the page they cite, **424,220** recorded cases compared, **0** disagreements, **906** tests, **100%** statement and branch coverage, no dependencies
+**1** part, **62** quoted sentences placed on the page they cite, **424,220** recorded cases compared, **0** disagreements, **938** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from arm6 import Cpu, Memory
@@ -226,6 +226,15 @@ Every document below is copyrighted and not redistributable, which is why none i
 | [GEC Plessey Semiconductors, *ARM60 Datasheet*, Issue 0.81](https://3dodev.com/_media/documentation/hardware/arm60_datasheet_-_gec_plessey_semiconductors.pdf) | 1993 | 83 | `315dbff7b6259a73…` | No |
 | [Advanced RISC Machines, *ARM610 Data Sheet*, ARM DDI 0004D](https://bitsavers.org/pdf/acorn/ARM_DDI_0004D_ARM610_Data_Sheet_Aug93.pdf) | 1993-08 | 134 | `76f13ffe2bc20774…` | No |
 | [Advanced RISC Machines, *Application Note 11: Differences Between ARM6 and Earlier ARM Processors*](https://home.marutan.net/rpcemu/Apps11vC.html) | undated | 1 | `41239bc21c8e3375…` | No |
+
+Fetching them is a command rather than an exercise. [`conformance/documents.json`](conformance/documents.json) carries the full digest, the byte count and a fetchable address for each, and [`conformance/documents.py`](conformance/documents.py) brings all three down into `docs/`, which git ignores, and refuses anything whose digest does not match.
+
+```bash
+python3 -m conformance.documents          # fetch and verify every digest
+python3 -m conformance.documents --check  # verify what is already here
+```
+
+The address for the ARM610 data sheet in that manifest is a mirror. The one linked above serves the file to a browser and answers a plain fetch with 403, and both serve the same bytes.
 
 The first of the three is the one that decides. It is the only document found that gives this part per instruction and per cycle, and it is the only one here with no text layer at all: `pdftotext` returns eighty three characters for its eighty three pages. Every page a quotation cites is therefore rendered and read rather than searched, and the checker that does it is [`conformance/quotes.py`](conformance/quotes.py).
 

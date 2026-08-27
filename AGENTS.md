@@ -166,6 +166,8 @@ conformance/
   singlestep.py   the filtered corpus, state only
   speed.py        the throughput floor
   links.py        the weekly check that every cited address still answers
+  documents.json  every document by digest, byte count and fetchable address
+  documents.py    brings them down into docs/, and refuses anything that differs
 ```
 
 ## Things that will bite you
