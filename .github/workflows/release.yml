@@ -76,7 +76,7 @@ jobs:
 
           held = json.loads(Path("sbom.json").read_text())
           named = sorted(one["name"] for one in held.get("components", ()))
-          allowed = {"pip", "upd7725"}
+          allowed = {"pip", "arm6"}
           extra = [one for one in named if one not in allowed]
           print(f"components: {', '.join(named) or 'none'}")
           if extra:

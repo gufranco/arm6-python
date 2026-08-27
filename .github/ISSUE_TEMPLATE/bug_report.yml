@@ -16,7 +16,7 @@ body:
     attributes:
       label: What the doctor says
       description: |
-        Run `python3 -m upd7725.doctor` from the repository and paste all of it,
+        Run `python3 arm6/doctor.py` from the repository and paste all of it,
         including any line that did not pass. Do not trim it: the digests it
         prints are what settle most reports on their own.
       render: text

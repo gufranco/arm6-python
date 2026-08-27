@@ -52,7 +52,7 @@ jobs:
       # The workflows are the one thing here nothing else checks, and a mistake
       # in them is only visible once a run has already gone wrong. The archive
       # is verified by digest before anything in it runs, for the same reason
-      # every image this project loads is.
+      # every document this project reads is.
       - name: Check the workflows themselves
         run: |
           curl -fsSL -o actionlint.tar.gz \
@@ -118,7 +118,7 @@ jobs:
             echo "::group::${file}"
             python -m coverage run -a "${file}" -v || status=1
             echo "::endgroup::"
-          done < <(find upd7725 conformance -name '*.test.py' | sort)
+          done < <(find arm6 conformance -name '*.test.py' | sort)
           exit "${status}"
         shell: bash
 
@@ -127,9 +127,9 @@ jobs:
 
       # No document is redistributable, so none is here and this checks nothing
       # on a runner. It says so rather than reporting a pass: the value is that
-      # somebody running it with the data sheet on disk gets a real answer, and
+      # somebody running it with the datasheet on disk gets a real answer, and
       # that a run without it cannot be mistaken for one.
-      - name: Every quoted sentence, against the document it came from
+      - name: Every quoted sentence, against the page it came from
         run: python -m conformance.quotes
 
       # Uninstrumented, and deliberately after the coverage run rather than
@@ -139,7 +139,7 @@ jobs:
         run: python -m conformance.speed
 
   conformance:
-    name: Conformance against the reference
+    name: Conformance against the recorded cases
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -148,14 +148,41 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      # Every field of every instruction form, against states recorded from the
-      # reference. This needs no program image at all, and it is the gate.
-      - name: Settle every instruction
-        run: python -m conformance.instructions
+      # Keyed by the file that pins the commit and names the filter, so a change
+      # to either fetches again rather than comparing against the old cases.
+      - name: Cache the recorded cases
+        id: cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/arm7tdmi
+          key: arm7tdmi-${{ hashFiles('conformance/suites.json') }}
 
-      # Live against the ported reference rather than against the recordings, on
-      # a small slice. The recordings are the authority and the step above is the
-      # gate; this catches a disagreement on ground the recordings do not cover,
-      # cheaply enough to run on every push. The long sweep is on the schedule.
-      - name: Model against reference, on a slice the corpus does not cover
-        run: python -m conformance.differential --from 70000000 --cases 4000
+      # Only the files the filter keeps are fetched. The other seven describe
+      # encodings this part has no row for, so fetching them would be a third of
+      # a gigabyte to throw away.
+      - name: Fetch the recorded cases
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          repository=$(python -c "import json;print(json.load(open('conformance/suites.json'))['suites'][0]['repository'])")
+          commit=$(python -c "import json;print(json.load(open('conformance/suites.json'))['suites'][0]['commit'])")
+          mkdir -p ~/.cache/arm7tdmi
+          git init -q ~/.cache/arm7tdmi
+          git -C ~/.cache/arm7tdmi remote add origin "${repository}"
+          git -C ~/.cache/arm7tdmi config core.sparseCheckout true
+          git -C ~/.cache/arm7tdmi sparse-checkout init --no-cone
+          python -m conformance.singlestep --files > ~/.cache/arm7tdmi/.git/info/sparse-checkout
+          git -C ~/.cache/arm7tdmi fetch --depth=1 --filter=blob:none origin "${commit}"
+          git -C ~/.cache/arm7tdmi checkout -q FETCH_HEAD
+        shell: bash
+
+      # A pull request runs a slice of each file for a quick answer. A push to
+      # main runs every case, because the number of them is what the claim rests
+      # on.
+      - name: Compare against every case the filter keeps
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            python -m conformance.singlestep ~/.cache/arm7tdmi/v1 --limit 2000
+          else
+            python -m conformance.singlestep ~/.cache/arm7tdmi/v1
+          fi
+        shell: bash

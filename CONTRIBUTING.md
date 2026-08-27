@@ -30,7 +30,7 @@ are evaluated eagerly before 3.14 and lazily from 3.14 on, so a file naming a
 type imported only for checking passes on one and fails to import on the other:
 
 ```bash
-uvx --python 3.12 python upd7725/core.test.py
+uvx --python 3.12 python arm6/core.test.py
 ```
 
 ## The workflows

@@ -4,7 +4,7 @@ An ARM60 you can drive from a clock, held to its own datasheet for every instruc
 
 [![CI](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml)
 
-**1** part, **62** quoted sentences placed on the page they cite, **424,220** recorded cases compared, **0** disagreements, **821** tests, **100%** statement and branch coverage, no dependencies
+**1** part, **62** quoted sentences placed on the page they cite, **424,220** recorded cases compared, **0** disagreements, **901** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from arm6 import Cpu, Memory
@@ -205,15 +205,23 @@ python3 arm6/doctor.py
 
 ## References
 
-Every document a claim here rests on, with the digest of the exact copy that was read. None of them is redistributable and none is in this repository.
+This repository carries no documents. Every claim is traced to something published elsewhere, listed here so a reader can fetch the same file and check the same page. Each row gives the page count and the first sixteen characters of the file's SHA-256, because links move and a link that has rotted into a different scan is easy to follow without noticing. Compute the full digest with `shasum -a 256 <file>`.
 
-| Document | Pages | SHA-256 |
-|:--|--:|:--|
-| ARM60 Datasheet, Issue 0.81 | 83 | `315dbff7b6259a73c5f2a188c997e52d73375c660334915b887f3dafcf5b5cb0` |
-| ARM610 Data Sheet, ARM DDI 0004D, August 1993 | 134 | `76f13ffe2bc207741814e129ffc41a9961d3e70d0df5c1f233c1473c3ee5a878` |
-| ARM Application Note 11, Differences Between ARM6 and Earlier ARM Processors | 1 | `41239bc21c8e33751bdc5a0977105c525f120f781cf8530fbf533f4ba1d868bb` |
+Every document below is copyrighted and not redistributable, which is why none is in this repository. Individual sentences are quoted in [`conformance/hardware.json`](conformance/hardware.json) with the page they are printed on.
 
-The corpus is pinned in [`conformance/suites.json`](conformance/suites.json) at [SingleStepTests/ARM7TDMI](https://github.com/SingleStepTests/ARM7TDMI), commit `e3097d88d428752736b949d94c094d5da50f0db6`.
+| Document | Date | Pages | SHA-256 | Redistributable |
+|:--|:--|--:|:--|:--|
+| [GEC Plessey Semiconductors, *ARM60 Datasheet*, Issue 0.81](https://3dodev.com/_media/documentation/hardware/arm60_datasheet_-_gec_plessey_semiconductors.pdf) | 1993 | 83 | `315dbff7b6259a73…` | No |
+| [Advanced RISC Machines, *ARM610 Data Sheet*, ARM DDI 0004D](https://bitsavers.org/pdf/acorn/ARM_DDI_0004D_ARM610_Data_Sheet_Aug93.pdf) | 1993-08 | 134 | `76f13ffe2bc20774…` | No |
+| [Advanced RISC Machines, *Application Note 11: Differences Between ARM6 and Earlier ARM Processors*](https://home.marutan.net/rpcemu/Apps11vC.html) | undated | 1 | `41239bc21c8e3375…` | No |
+
+The first of the three is the one that decides. It is the only document found that gives this part per instruction and per cycle, and it is the only one here with no text layer at all: `pdftotext` returns eighty three characters for its eighty three pages. Every page a quotation cites is therefore rendered and read rather than searched, and the checker that does it is [`conformance/quotes.py`](conformance/quotes.py).
+
+The ARM610 datasheet is a second witness for the instruction set and the programmer's model, and for nothing else: its bus chapter describes two clocks, two cycle types and a cache, none of which the ARM60 has. Application Note 11 is the only document found that prints the four 26-bit mode encodings, which both datasheets leave out.
+
+| Source | Used for |
+|:--|:--|
+| [SingleStepTests/ARM7TDMI](https://github.com/SingleStepTests/ARM7TDMI) | The recorded cases the core is compared against, state only. Commit and filter in [`conformance/suites.json`](conformance/suites.json) |
 
 The family standard every repository here is built to is in [FAMILY.md](FAMILY.md).
 

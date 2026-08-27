@@ -5,7 +5,7 @@ set -euo pipefail
 readonly VERSION_PATTERN='^[0-9]+\.[0-9]+\.[0-9]+([-+].*)?$'
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-readonly VERSION_FILE="${root}/upd7725/version.py"
+readonly VERSION_FILE="${root}/arm6/version.py"
 
 readonly CITATION_FILE="${root}/CITATION.cff"
 
@@ -21,7 +21,7 @@ version_recorded_in_file() {
 replace_recorded_version() {
   local wanted=$1
   local scratch
-  scratch=$(mktemp "${TMPDIR:-/tmp}/upd7725-version-XXXXXX")
+  scratch=$(mktemp "${TMPDIR:-/tmp}/arm6-version-XXXXXX")
 
   sed "s/^VERSION = \".*\"$/VERSION = \"${wanted}\"/" "${VERSION_FILE}" >"${scratch}"
   cat "${scratch}" >"${VERSION_FILE}"

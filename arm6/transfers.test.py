@@ -372,6 +372,22 @@ class DrivenAsWholeInstructionsTest(unittest.TestCase):
 
         self.assertEqual((held.registers.pc, held.registers.cpsr), (0x40, before))
 
+    def test_a_pre_indexed_store_without_write_back_leaves_the_base_alone(self) -> None:
+        held = self.part(0xE5810004)
+        held.registers.write(1, 0x2000)
+
+        held.step()
+
+        self.assertEqual(held.registers.read(1), 0x2000)
+
+    def test_a_post_indexed_store_writes_the_base_back_anyway(self) -> None:
+        held = self.part(0xE4810004)
+        held.registers.write(1, 0x2000)
+
+        held.step()
+
+        self.assertEqual(held.registers.read(1), 0x2004)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

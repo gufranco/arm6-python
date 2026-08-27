@@ -886,38 +886,61 @@ the others do not also get.*
 
 ## The state of this repository
 
-**One of the two parts has a manufacturer document and the other has none.**
-NEC's 1987 data sheet covers the uPD77C25 and settles the widths, the stack
-depth, the cycle counts and the memory sizes. No document for the uPD96050 was
-located, so everything asserted about that part rests on secondary sources, and
-secondary sources for this family are emulators. The later edition of NEC's own
-data book, 1992, does not carry the part either.
+**One part, and a catalogue built to grow.** The core is the same in ARM60,
+ARM600 and ARM610: the ARM610 datasheet says outright that the CPU within ARM610
+is the ARM6, and gives the ARM600 delta as five items, every one a bus or
+packaging difference. So the instruction set carries across all three. The bus
+does not, and the bus is what this family holds a clocked part to. ARM610's bus
+chapter describes two clocks rather than one, two cycle types rather than four,
+`SEQ` derived rather than driven, and sequential runs broken at 256-word
+boundaries for a memory management unit ARM60 does not have. No document gives
+ARM600 or ARM610 at the resolution of ARM60's chapter 10, so the catalogue holds
+ARM60 and the other three are open questions naming what each would settle.
 
-It carries `verified: false` in
-[`conformance/hardware.json`](conformance/hardware.json) and an entry in
-[`conformance/divergences.json`](conformance/divergences.json).
+**The document has no text layer, and that changed how a quote is checked.**
+Asking `pdftotext` for the ARM60 datasheet returns one newline per page: eighty
+three characters for eighty three pages. Every other member reads its documents
+that way, so the checker ported unchanged would have found nothing, reported
+nothing missing, and exited zero over a document it had not read. This member's
+`conformance/quotes.py` renders each cited page and recognises it instead, which
+is the family's own rule about reading a photograph made mechanical rather than
+left to whoever wrote the record.
 
-**Three of its four figures have a second witness that is not an emulator.** A
-published image for the larger part is exactly 16384 program words of three
-bytes plus 2048 table words of two bytes, so a wrong size would fail to load.
-That is the artifact corroborating itself, which is the second rung of the
-ladder. The stack depth has no such witness and rests on the secondary source
-alone.
+**Rungs two and three of the ladder are empty and the record says so.** No ARM60
+has been probed for this package and no implementation of this architecture in
+reconfigurable logic is known to exist, so nothing here rests on a measurement of
+real silicon. That is the ceiling, it is permanent without a logic analyser or a
+die photograph, and it is the first entry in
+[`OPEN-QUESTIONS.md`](OPEN-QUESTIONS.md).
 
-**Instruction-level behaviour comes from a recording, and the recording is an
-emulator.** The data sheet is Advance Product Information: it does not give every
-flag rule, every undefined encoding, or the result of every field combination.
-Where the document and the recording overlap the document wins and the recording
-is retaken. Where they do not overlap, and that covers most of the flag rules,
-there is nothing to check the recording against.
+**Two chapters of one datasheet disagree about one cycle.** Table 5 gives a data
+operation with a register-specified shift two rows whose pins read as an internal
+cycle followed by a sequential one; Table 20 costs the same form at two
+sequential cycles. The count agrees and only the type differs. The model follows
+Table 5, because a per-cycle table states the pins rather than summarising them
+and because the same two rows appear again in Table 6 for the shortest multiply,
+which Table 20 itself costs at `1S+1I`.
 
-**How long a host takes to reach this part is not modelled here.** That is a
-property of the board it sits on and of the bus between them, so it belongs to
-whatever models the board. This package answers what the part does once it is
-reached, and counts the cycles that takes.
+### Waiver: `step` reports a count, and the breakdown is on the part
 
-**This package is the processor and nothing else.** It does not name the machines
-these parts shipped in, the products they were sold as, or the programs masked
-into them. A processor is not the machine somebody put it in, and a package that
-names one becomes a catalogue of that machine's parts wearing a processor's name.
-The word for whatever drives this part is `host`, everywhere, for that reason.
+- rule: FAMILY.md / "One interface across the family", `step()` returns the
+  cycles that instruction cost
+- scope: `arm6-python` only, and only the shape of what `step` hands back
+- approved_by: the repository owner, when this member was added
+- rationale: ARM60 section 8.6 states that `mclk` may be stretched without limit
+  and that `Nwait` may insert whole cycles instead, and the pin table adds that
+  `Nwait` may be tied HIGH in a system that needs none. How long a cycle takes is
+  therefore a fact about the board, and a single integer of ticks would publish a
+  board fact nobody measured. The manufacturer states every instruction's cost in
+  four types rather than one number, and this member reports the same four.
+- alternatives: returning a four-way tally from `step` was tried first and
+  refused by CPython, which does not allow a non-empty `__slots__` on a subclass
+  of `int` because `int` is variable length. The family requires every published
+  class to declare its slots, so one object cannot be both an integer a host can
+  pace against and a carrier of the breakdown. Returning a bare tick count was
+  rejected because it would state a board fact as though the part had one.
+- risk: a caller who reads only `step` gets a number and may take it for a
+  duration. It is the count with `Nwait` tied HIGH, which is a configuration the
+  pin table names, and both the readme and the interface table say so.
+- revisit: if a later Python allows the slots, or if a measurement of a real
+  board ever makes a tick count something this member could honestly publish.

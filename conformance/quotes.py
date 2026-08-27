@@ -40,9 +40,9 @@ import json
 import re
 import subprocess
 import sys
-from pathlib import Path
 from collections.abc import Callable, Iterable, Sequence
-from typing import Any, NamedTuple
+from pathlib import Path
+from typing import Any, NamedTuple, override
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -101,6 +101,7 @@ class Verdict(NamedTuple):
         """True when there was nothing to check against, which is not a failure."""
         return self.windows == 0
 
+    @override
     def __repr__(self) -> str:
         return f"<Verdict {self.where} {self.placed}/{self.windows}>"
 
@@ -140,7 +141,7 @@ def _shell(command: Sequence[str], **options: Any) -> subprocess.CompletedProces
     Marked no-cover because running it would run the external tools, which is
     what the check itself does and not what a test of the check should do.
     """
-    return subprocess.run(command, **options)  # noqa: S603, PLW1510  # pragma: no cover
+    return subprocess.run(command, **options)  # noqa: PLW1510  # pragma: no cover
 
 
 def text_layer(path: Path, page: int, run: Callable[..., Any] | None = None) -> str:
@@ -303,27 +304,35 @@ def loaded() -> list[Claim]:
     return found
 
 
+def readable(sources: dict[str, dict[str, Any]]) -> int:
+    """How many of the declared documents are on this machine.
+
+    A count rather than a boolean, because the report has to be able to say that
+    it looked at three documents and found none, which is a different sentence
+    from having looked at nothing.
+    """
+    return sum(1 for one in sources.values() if (DOCUMENTS / str(one.get("file"))).exists())
+
+
 def verify(
     held: Iterable[Claim] | None = None,
     run: Callable[..., Any] | None = None,
+    cache: Path | None = None,
 ) -> tuple[list[Verdict], int]:
     """Every claim against the page it names, and how many documents were readable."""
     sources = declared()
     pages: dict[tuple[str, int], str] = {}
-    books = 0
-    for name, one in sources.items():
-        if (DOCUMENTS / str(one.get("file"))).exists():
-            books += 1
+    books = readable(sources)
     verdicts = []
     for claim in held if held is not None else loaded():
-        one = sources.get(claim.document)
-        if one is None or claim.page is None:
+        source = sources.get(claim.document)
+        if source is None or claim.page is None:
             verdicts.append(Verdict(claim.where, claim.quote, claim.document, claim.page, 0, 0))
             continue
-        path = DOCUMENTS / str(one.get("file"))
+        path = DOCUMENTS / str(source.get("file"))
         key = (claim.document, claim.page)
         if key not in pages:
-            pages[key] = page_text(path, claim.page, run)
+            pages[key] = page_text(path, claim.page, run, cache)
         body = pages[key]
         if not body:
             verdicts.append(Verdict(claim.where, claim.quote, claim.document, claim.page, 0, 0))

@@ -98,6 +98,34 @@ WHOLE_FILES = {
 }
 """The seven files this part has no answer for, and the reason in each case."""
 
+ARM_FILES = (
+    "arm_b_bl",
+    "arm_bx",
+    "arm_cdp",
+    "arm_data_proc_immediate",
+    "arm_data_proc_immediate_shift",
+    "arm_data_proc_register_shift",
+    "arm_ldm_stm",
+    "arm_ldr_str_immediate_offset",
+    "arm_ldr_str_register_offset",
+    "arm_ldrh_strh",
+    "arm_ldrsb_ldrsh",
+    "arm_mcr_mrc",
+    "arm_mrs",
+    "arm_msr_imm",
+    "arm_msr_reg",
+    "arm_mul_mla",
+    "arm_mull_mlal",
+    "arm_stc_ldc",
+    "arm_swi",
+    "arm_swp",
+)
+"""The twenty ARM-state files the corpus publishes, in the order it names them.
+
+Written out rather than globbed because it is also the list a fetch works from,
+and a fetch cannot glob a repository it has not cloned yet.
+"""
+
 SYSTEM_MODE = 0b11111
 
 EXAMPLES = 5
@@ -301,12 +329,12 @@ def _forbidden(case: Case, stem: str, privileged: bool) -> str | None:
             return "an MSR field mask Figure 14 does not print"
         if word & 1 << 25 and rn == 0b1001:
             return "an eight bit immediate written into the whole PSR"
-        if rn == 0b1001 and not _lands_in_a_thirty_two_bit_mode(case):
-            return "a mode the generator's part cannot enter written into a PSR"
         if not word & 1 << 25 and rm == 15:
             return "R15 as the source of a PSR write"
         if word & 1 << 22 and not privileged:
             return "an SPSR reached from a user mode"
+        if rn == 0b1001 and not _lands_in_a_thirty_two_bit_mode(case):
+            return "a mode the generator's part cannot enter written into a PSR"
     if _register_shift(word) and rs == 15:
         return "R15 as the register holding a shift amount"
     return None
@@ -485,8 +513,21 @@ def verdict(tally: Tally) -> int:
     return 1 if tally.disagreed else 0
 
 
+def wanted() -> list[str]:
+    """The files worth fetching: the ones the filter does not drop whole.
+
+    Fetching the other seven would be a third of a gigabyte of encodings this
+    part has no row for.
+    """
+    return [f"/v1/{one}.json.bin" for one in ARM_FILES if one not in WHOLE_FILES]
+
+
 def main(argv: Sequence[str] = (), say: Callable[[str], object] = print) -> int:
     rest = list(argv)
+    if "--files" in rest:
+        for one in wanted():
+            say(one)
+        return 0
     counting = "--count" in rest
     if counting:
         rest.remove("--count")

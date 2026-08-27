@@ -12,7 +12,7 @@ evidence that they did.
 
 - [ ] `ruff format --check .` and `ruff check .` are clean
 - [ ] Every test file runs, and coverage is 100% of statements and branches
-- [ ] `python3 -m upd7725.doctor` reports nothing on this machine
+- [ ] `python3 arm6/doctor.py` reports nothing on this machine
 - [ ] The instruction sweep in `conformance/` still reports zero disagreements
 
 ## If this changes what an instruction does

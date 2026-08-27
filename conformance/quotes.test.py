@@ -336,5 +336,165 @@ class TheRecordIsWellFormedTest(unittest.TestCase):
         self.assertIn("documents", held)
 
 
+class TheWholeRunTest(unittest.TestCase):
+    """Verification end to end, against a document the test writes itself."""
+
+    def test_a_claim_whose_document_is_absent_is_unchecked_rather_than_failed(self) -> None:
+        held, _ = quotes.verify([quotes.Claim("where", "a sentence", "nothing", 1)], run=refusing())
+
+        self.assertTrue(held[0].unchecked)
+
+    def test_a_claim_with_no_page_is_unchecked_too(self) -> None:
+        name = next(iter(quotes.declared()))
+
+        held, _ = quotes.verify([quotes.Claim("where", "a sentence", name, None)])
+
+        self.assertTrue(held[0].unchecked)
+
+    def test_a_page_that_reads_as_empty_is_unchecked(self) -> None:
+        name = next(iter(quotes.declared()))
+
+        with tempfile.TemporaryDirectory() as where:
+            held, _ = quotes.verify(
+                [quotes.Claim("where", "a sentence", name, 1)],
+                run=runner(pdftotext=""),
+                cache=Path(where),
+            )
+
+            self.assertTrue(held[0].unchecked)
+
+    def test_the_number_of_documents_on_this_machine_is_reported(self) -> None:
+        held = quotes.verify([], run=refusing())
+
+        self.assertGreaterEqual(held[1], 0)
+
+    def test_a_claim_placed_on_a_page_the_test_supplies_is_found(self) -> None:
+        name = next(one for one, held in quotes.declared().items() if held["file"].endswith(".pdf"))
+
+        with tempfile.TemporaryDirectory() as where:
+            held, _ = quotes.verify(
+                [quotes.Claim("where", "the sentence this page carries", name, 1)],
+                run=runner(pdftotext="before the sentence this page carries after, at length"),
+                cache=Path(where),
+            )
+
+        self.assertTrue(held[0].found)
+
+    def test_and_one_that_is_not_on_it_is_reported_rather_than_skipped(self) -> None:
+        name = next(one for one, held in quotes.declared().items() if held["file"].endswith(".pdf"))
+
+        with tempfile.TemporaryDirectory() as where:
+            held, _ = quotes.verify(
+                [quotes.Claim("where", "a sentence nobody ever printed anywhere", name, 1)],
+                run=runner(pdftotext="this page carries something else entirely, at some length"),
+                cache=Path(where),
+            )
+
+        self.assertEqual((held[0].found, held[0].unchecked), (False, False))
+
+
+class ReadingTheRecordsTest(unittest.TestCase):
+    def test_a_documents_block_inside_a_list_is_found(self) -> None:
+        into: dict[str, Any] = {}
+
+        quotes._collect_documents([{"documents": {"a": {"file": "a.pdf"}}}], into)
+
+        self.assertEqual(sorted(into), ["a"])
+
+    def test_a_documents_block_that_is_not_a_mapping_is_stepped_over(self) -> None:
+        into: dict[str, Any] = {}
+
+        quotes._collect_documents({"documents": "not a block"}, into)
+
+        self.assertEqual(into, {})
+
+    def test_an_entry_that_is_not_a_mapping_is_stepped_over(self) -> None:
+        into: dict[str, Any] = {}
+
+        quotes._collect_documents({"documents": {"a": "not an entry"}}, into)
+
+        self.assertEqual(into, {})
+
+    def test_a_quote_inside_a_list_is_collected(self) -> None:
+        held = quotes.claims([{"facts": {"one": {"quote": "a sentence", "document": "d"}}}])
+
+        self.assertEqual(len(held), 1)
+
+    def test_a_numbered_set_holding_something_that_is_not_a_passage_is_stepped_over(
+        self,
+    ) -> None:
+        held = quotes.claims({"one": {"quotes": [1, 2], "document": "d", "page": 1}})
+
+        self.assertEqual(held, [])
+
+
+class TheLastFewPathsTest(unittest.TestCase):
+    """The branches a normal run never reaches, driven so they have run once."""
+
+    def test_a_declared_document_that_is_absent_is_not_counted(self) -> None:
+        held = quotes.readable({"a": {"file": "no-such-document.pdf"}})
+
+        self.assertEqual(held, 0)
+
+    def test_and_one_that_is_there_is(self) -> None:
+        name = next(iter(quotes.declared().values()))
+
+        held = quotes.readable({"a": name})
+
+        self.assertEqual(held, 1)
+
+    def test_a_mixture_counts_only_the_ones_that_are_there(self) -> None:
+        name = next(iter(quotes.declared().values()))
+
+        held = quotes.readable({"a": name, "b": {"file": "no-such-document.pdf"}})
+
+        self.assertEqual(held, 1)
+
+    def test_a_machine_without_the_renderer_reports_nothing_rather_than_throwing(self) -> None:
+        with tempfile.TemporaryDirectory() as where:
+            held = quotes._recognise(Path(where) / "a.pdf", 1, refusing(), Path(where))
+
+            self.assertEqual(held, "")
+
+    def test_a_document_that_is_not_a_pdf_and_is_not_there_reads_as_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as where:
+            held = quotes.page_text(Path(where) / "gone.html", 1, run=refusing())
+
+            self.assertEqual(held, "")
+
+    def test_two_claims_on_one_page_read_that_page_once(self) -> None:
+        name = next(one for one, held in quotes.declared().items() if held["file"].endswith(".pdf"))
+        asked: list[str] = []
+
+        def counting(command: list[str], **_: Any) -> subprocess.CompletedProcess[str]:
+            asked.append(Path(command[0]).name)
+            return subprocess.CompletedProcess(
+                command, 0, stdout="the sentence this page carries, at some length", stderr=""
+            )
+
+        with tempfile.TemporaryDirectory() as where:
+            quotes.verify(
+                [
+                    quotes.Claim("a", "the sentence this page carries", name, 1),
+                    quotes.Claim("b", "the sentence this page carries", name, 1),
+                ],
+                run=counting,
+                cache=Path(where),
+            )
+
+            self.assertEqual(asked.count("pdftotext"), 1)
+
+    def test_a_run_that_placed_everything_but_could_not_check_some_says_both(self) -> None:
+        held = quotes.report(
+            [
+                quotes.Verdict("a", "q", "d", 1, 4, 4),
+                quotes.Verdict("b", "q", "d", 1, 0, 0),
+            ],
+            books=1,
+        )
+
+        self.assertIn("1 could not be checked", "\n".join(held))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

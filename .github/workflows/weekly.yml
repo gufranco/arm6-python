@@ -71,27 +71,24 @@ jobs:
             echo "::group::${file}"
             python -m coverage run -a "${file}" || status=1
             echo "::endgroup::"
-          done < <(find upd7725 conformance -name '*.test.py' | sort)
+          done < <(find arm6 conformance -name '*.test.py' | sort)
           exit "${status}"
         shell: bash
 
       - name: Coverage must still be total
         run: python -m coverage report
 
-      # The gate proper. Every field of every instruction form against states
-      # recorded from the reference, on an interpreter nobody has tested this on.
-      - name: Settle every instruction again
-        run: python -m conformance.instructions
+      # The throughput floor, on an interpreter nobody has tested this on.
+      - name: The model has not become several times slower
+        run: python -m conformance.speed
 
-      # The corpus is a fixed size because a recording has to be stored. This is
-      # not stored, so it can go as far as it is given time for, and it starts
-      # somewhere different every week: the case number is the week of the year,
-      # multiplied out past the range the corpus covers. Over a year the schedule
-      # walks ground the gate never sees. A disagreement here is a candidate
-      # rather than a verdict, and it prints the one case that produced it.
-      - name: Model against reference, on ground the corpus never covered
+      # The corpus is not fetched here. This job exists to find out what a newer
+      # interpreter or a newer checker breaks, and the comparison against the
+      # recorded cases already runs on every push to main against a pinned
+      # commit. Fetching a third of a gigabyte weekly to re-answer a question
+      # nothing has changed would be paying for a result that is already known.
+      - name: Say what this run did not cover
         run: |
-          week=$(date -u +%V)
-          python -m conformance.differential \
-            --from "$((week * 1000000))" --cases 2000000 --seconds 900
+          echo "The recorded cases are not compared here: that runs on every"
+          echo "push to main, against the commit conformance/suites.json pins."
         shell: bash

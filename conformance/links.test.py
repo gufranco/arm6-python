@@ -109,10 +109,18 @@ class ReadingTest(unittest.TestCase):
         every document a claim rests on is an address somebody will be told
         about when it stops answering.
         """
-        found = links.addresses()
-        pinned = [one for one in found if "cryptomuseum" in one or "bitsavers" in one]
+        import json
 
-        self.assertEqual(len(pinned), 2)
+        record = json.loads((ROOT / "conformance" / "hardware.json").read_text())
+        found = " ".join(links.addresses())
+        stems = {
+            Path(str(one["file"])).stem.split("_")[0].lower()
+            for one in record["documents"].values()
+        }
+
+        missing = [one for one in stems if one not in found.lower()]
+
+        self.assertEqual(missing, [])
 
     def test_and_every_one_of_them_is_an_address(self) -> None:
         wrong = [one for one in links.addresses() if not one.startswith("https://")]
