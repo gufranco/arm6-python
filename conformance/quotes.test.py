@@ -454,6 +454,26 @@ class TheLastFewPathsTest(unittest.TestCase):
 
             self.assertEqual(held, 1)
 
+    def test_a_document_is_keyed_by_its_own_digest(self) -> None:
+        with tempfile.TemporaryDirectory() as where:
+            page = Path(where) / "a.pdf"
+            page.write_bytes(b"the bytes of a scan")
+
+            held = quotes._digest(page)
+
+            self.assertEqual(len(held), 16)
+
+    def test_and_two_different_scans_key_differently(self) -> None:
+        with tempfile.TemporaryDirectory() as where:
+            first = Path(where) / "a.pdf"
+            first.write_bytes(b"one scan")
+            second = Path(where) / "b.pdf"
+            second.write_bytes(b"a different scan")
+
+            held = quotes._digest(first) == quotes._digest(second)
+
+            self.assertFalse(held)
+
     def test_a_machine_without_the_renderer_reports_nothing_rather_than_throwing(self) -> None:
         with tempfile.TemporaryDirectory() as where:
             held = quotes._recognise(Path(where) / "a.pdf", 1, refusing(), Path(where))
