@@ -1,0 +1,78 @@
+# Contributing
+
+## The short version
+
+Evidence over assertion. A change that claims something is correct carries the
+run that shows it, and a claim that cannot be checked is not ready.
+
+## Before you open a pull request
+
+Run every gate, and read the output rather than the exit code:
+
+```bash
+uvx ruff@0.16.3 format --check .
+uvx ruff@0.16.3 check .
+uvx mypy@1.14.1
+pnpm install --frozen-lockfile && pnpm run format:check
+python3 -m coverage erase
+for f in $(find . -name '*.test.py' -not -path './packages/*' | sort); do
+  python3 -m coverage run -a "$f" || echo "FAILED $f"
+done
+python3 -m coverage report
+```
+
+Coverage is a hard gate at 100% statement and branch. A branch with no test
+fails the build rather than lowering the number. Types are a hard gate too: strict,
+with every optional error class the checker version offers.
+
+Run the suite on the oldest Python supported as well as the newest. Annotations
+are evaluated eagerly before 3.14 and lazily from 3.14 on, so a file naming a
+type imported only for checking passes on one and fails to import on the other:
+
+```bash
+uvx --python 3.12 python upd7725/core.test.py
+```
+
+## The workflows
+
+They are checked too, by actionlint, and the archive it comes from is verified
+by digest before it runs. If you have it installed already, `actionlint` from the
+repository root is the same check.
+
+## Tests
+
+A test file sits beside the module it covers and is named after it. Test bodies
+carry no comments: arrange, act and assert are separated by one blank line each,
+and the test name says what behaviour is being pinned.
+
+Tests that need a file nobody can distribute are skipped rather than passed when
+that file is absent, and they live apart from the rest so the coverage gate stays
+meaningful on a runner that has nothing.
+
+## Commits
+
+Conventional Commits, subject under fifty characters, imperative mood. The body
+explains what changed and why, wrapped at seventy two columns. Releases are cut
+by semantic-release from those subjects, so the type is what decides the version.
+
+## What will be sent back
+
+- A file nobody can legally redistribute, or a digest of one fine enough to
+  reconstruct it. Whole-file digests are welcome; per-block ones are not.
+- A number in a document that no run produced.
+- A behaviour changed without the corpus or the pinned digests moving with it.
+- A test that asserts what the code does rather than what the hardware does.
+
+## Conduct
+
+The [Code of Conduct](CODE_OF_CONDUCT.md) applies everywhere this project is
+discussed. One line of it is specific to this repository and worth reading twice:
+never post a copyrighted image, a game, or a link to somewhere either can be
+downloaded. A digest identifies a file without carrying it, and a digest is all
+anybody needs.
+
+## What is welcome without asking
+
+Measurements. If you have cartridges, patches or hardware this has not been run
+against, the most useful contribution is a run and what it found, especially a
+disagreement.

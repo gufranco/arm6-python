@@ -1,0 +1,127 @@
+[build-system]
+requires = ["setuptools>=84.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arm6"
+description = "The ARM6, held to its own datasheet for every instruction and every cycle it spends."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+dynamic = ["version"]
+keywords = ["arm6", "arm60", "arm", "cpu", "emulator", "conformance", "retrocomputing"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: System :: Emulators",
+  "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/gufranco/arm6-python"
+Source = "https://github.com/gufranco/arm6-python"
+Issues = "https://github.com/gufranco/arm6-python/issues"
+
+[project.scripts]
+arm6-doctor = "arm6.doctor:main"
+
+[tool.setuptools]
+packages = ["arm6"]
+
+[tool.setuptools.dynamic]
+version = { attr = "arm6.version.VERSION" }
+
+[tool.setuptools.exclude-package-data]
+arm6 = ["*.test.py"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF", "PL", "BLE", "C4", "N", "A", "T20", "PTH"]
+ignore = [
+  "PLR0913",
+  "PLR2004",
+  "PLR0912",
+  "PLR0915",
+  "PLR0911",
+  "PLC0415",
+  "PLR0917",
+  "E501",
+  # N818 wants every exception to end in Error. Three of these are control flow
+  # signals rather than failures, and CPython names its own that way:
+  # StopIteration, SystemExit and GeneratorExit carry no suffix either. The
+  # exceptions here that genuinely report a failure do end in Error.
+  "N818",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# A test file sits beside the module it covers and is named after it, so its
+# module name carries a dot that N999 rejects. The layout is deliberate: a
+# module and its tests are read together.
+"*.test.py" = ["PLR2004", "N999"]
+# These are command line tools. Printing is their output, not a stray debug
+# statement left behind, and routing it through a logger would put a level and
+# a timestamp in front of a report meant to be read by a person.
+"conformance/*.py" = ["T201"]
+# The doctor exists so that nothing fails silently, which means it has to survive
+# whatever a check throws at it and report that rather than propagate it. A
+# narrower catch here would let an unforeseen failure escape as a traceback and
+# take the rest of the report with it, which is the one outcome it must avoid.
+# It prints for the same reason every tool here does: its output is the product.
+"arm6/doctor.py" = ["BLE001", "T201"]
+
+[tool.coverage.run]
+source = ["arm6", "conformance"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+exclude_also = [
+  # A protocol body is a contract, never code: the type checker reads it and the
+  # runtime never runs it, because the class exists to be satisfied rather than
+  # instantiated. Demanding coverage of the ellipses would mean calling methods
+  # that deliberately do nothing.
+  # The command line guard hands argv to a function that is itself tested, so
+  # there is nothing behind it left to exercise. Importing the module to cover
+  # the guard would run the tool rather than test it.
+  'if __name__ == "__main__":',
+  # A type checking block never runs, by definition. Python 3.14 drops it before
+  # coverage can see it and earlier versions do not, so leaving it in would make
+  # the gate mean one thing on the newest runtime and another on the oldest
+  # supported one, which is worse than either.
+  'if TYPE_CHECKING:',
+  # A protocol method has no body to run, whether the ellipsis sits on its own
+  # line or after the signature. The same version split applies.
+  '^\s*\.\.\.$',
+  ': \.\.\.$',
+]
+
+[tool.mypy]
+# Every flag mypy has, plus the ones strict does not turn on. A model of a
+# processor is arithmetic on masked integers from end to end, and the errors that
+# matter most here are the ones where a width, a sign or a None slips through a
+# boundary. A checker that sees the whole register file is the cheapest place to
+# catch those.
+strict = true
+python_version = "3.12"
+warn_unreachable = true
+warn_no_return = true
+strict_equality = true
+extra_checks = true
+enable_error_code = [
+  "explicit-override",
+  "ignore-without-code",
+  "possibly-undefined",
+  "redundant-expr",
+  "truthy-bool",
+  "truthy-iterable",
+  "unused-awaitable",
+]
+files = ["arm6", "conformance"]

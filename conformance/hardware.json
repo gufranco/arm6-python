@@ -1,0 +1,507 @@
+{
+  "note": "What ARM's own documentation says this silicon IS. Where the documents are silent, conformance/suites.json names what answers instead and what that is worth. When an implementation disagrees with this file, the implementation is wrong, no matter how widely used it is.",
+  "documents": {
+    "arm60": {
+      "file": "arm60_gec.pdf",
+      "title": "ARM60 Datasheet, Issue 0.81",
+      "sha256": "315dbff7b6259a73c5f2a188c997e52d73375c660334915b887f3dafcf5b5cb0",
+      "pages": 83,
+      "readAs": "rendered images, all 83 pages, twice: once by a recogniser and once by eye",
+      "textLayer": "none. pdftotext returns one newline per page and nothing else, so a search of the text layer proves nothing and every quotation here was checked against a rendered page.",
+      "printedPageEqualsFilePage": true
+    },
+    "arm610": {
+      "file": "arm610_ddi0004d.pdf",
+      "title": "ARM610 Data Sheet, ARM DDI 0004D, August 1993",
+      "sha256": "76f13ffe2bc207741814e129ffc41a9961d3e70d0df5c1f233c1473c3ee5a878",
+      "pages": 134,
+      "readAs": "text layer, with every table cross-checked against the page image",
+      "scope": "a second witness for the instruction set and the programmer's model only. Its bus chapters describe a different machine and are not used."
+    },
+    "appnote11": {
+      "file": "arm_application_note_11.html",
+      "title": "ARM Application Note 11, Differences Between ARM6 and Earlier ARM Processors",
+      "sha256": "41239bc21c8e33751bdc5a0977105c525f120f781cf8530fbf533f4ba1d868bb",
+      "pages": 1,
+      "readAs": "text, in full",
+      "scope": "the four 26-bit mode encodings no datasheet prints, and the rule that says what an unobserved restriction does."
+    }
+  },
+  "documentsNote": "Three documents, one of which decides. Only the ARM60 datasheet gives this part cycle by cycle; the other two are cited where they say something it does not.",
+  "authority": {
+    "order": [
+      "the ARM60 datasheet, for anything it prints: the instruction set, the programmer's model, the memory interface, and chapter 10's per-instruction per-cycle bus behaviour",
+      "ARM DDI 0004D, the ARM610 datasheet, as a second witness for the instruction set and the programmer's model, never for a timing",
+      "ARM Application Note 11, for the 26-bit mode encodings the datasheets do not tabulate, and for what an unobserved restriction does",
+      "the filtered SingleStepTests ARM7TDMI corpus, state only, for instruction-level behaviour no document specifies",
+      "nothing else"
+    ],
+    "why": "The first three are the manufacturer's, and among them the ARM60 datasheet is the only one describing this part's bus. The corpus is a recording from an implementation of a later part, so it is a good source for behaviour nobody wrote down and a poor one for anything a manufacturer printed. Where the two disagree the document wins. ARM DDI 0020C and ARM DDI 0024C are deliberately absent: they are ARMv3 and they disagree with ARM6 in three rows of the speed table, so they are witnesses that the timings differ rather than witnesses to what they are.",
+    "comparedAgainst": {
+      "runner": "conformance/singlestep.py",
+      "what": "The ARM-state files of SingleStepTests/ARM7TDMI, pinned by commit in conformance/suites.json and filtered per that file, compared on processor state alone. Its cycle and transaction data is never read: ARM60's multiply worst case is 1S+16I and the ARM7TDMI's is 1S+4I, so the transaction stream belongs to a different part's bus."
+    },
+    "notMeasured": "Nothing here rests on a measurement of real silicon. No ARM60 has been probed for this package and no FPGA implementation of this architecture is known to exist, so rungs two and three of the family ladder are empty and say so."
+  },
+  "parts": [
+    {
+      "part": "arm60",
+      "verified": true,
+      "summary": "The ARM60 as its own datasheet describes it, configured for a 32 bit program and data space, which is what chapter 9 recommends and what the rest of that document describes.",
+      "facts": {
+        "addressBus": {
+          "quote": "ARM60 has a 32 bit address bus, unlike earlier ARM processors which had a 26 bit address bus.",
+          "document": "arm60",
+          "section": "1 Introduction",
+          "page": 1,
+          "parts": ["arm60"],
+          "value": 32
+        },
+        "staticImplementation": {
+          "quote": "ARM60 is a fully static CMOS implementation of the ARM which allows the clock to be stopped in any part of the cycle with extremely low residual power consumption and no loss of state.",
+          "document": "arm60",
+          "section": "1 Introduction",
+          "page": 1,
+          "parts": ["arm60"]
+        },
+        "registerCount": {
+          "quote": "The processor has a total of 37 registers made up of 31 general purpose 32 bit registers and 6 status registers.",
+          "document": "arm60",
+          "section": "6.1 Programmer's Model",
+          "page": 10,
+          "parts": ["arm60"],
+          "value": 37
+        },
+        "r15Read": {
+          "quote": "When R15 is read, bits [1:0] are zero and bits [31:2] contain the PC.",
+          "document": "arm60",
+          "section": "6.1 Programmer's Model",
+          "page": 10,
+          "parts": ["arm60"]
+        },
+        "modesAvailable": {
+          "quote": "When using a 32 bit program space there are a total of 10 modes available.",
+          "document": "arm60",
+          "section": "5.2 Operating Mode Selection",
+          "page": 8,
+          "parts": ["arm60"],
+          "value": 10
+        },
+        "reservedBits": {
+          "quote": "Only eleven bits of the PSR are defined in ARM60",
+          "document": "arm60",
+          "section": "7.4.2 Reserved bits",
+          "page": 26,
+          "parts": ["arm60"],
+          "value": "0x0FFFFF20"
+        },
+        "multiplierRadix": {
+          "quote": "The multiply and multiply-accumulate instructions use a 2 bit Booth's algorithm to perform integer multiplication.",
+          "document": "arm60",
+          "section": "7.5 Multiply and Multiply-Accumulate",
+          "page": 28,
+          "parts": ["arm60"]
+        },
+        "multiplyRdEqualsRm": {
+          "quote": "A MUL will give a zero result if Rm=Rd, and a MLA will give a meaningless result.",
+          "document": "arm60",
+          "section": "7.5.1 Operand restrictions",
+          "page": 28,
+          "parts": ["arm60"]
+        },
+        "multiplyCarry": {
+          "quote": "the C flag is set to a meaningless value",
+          "document": "arm60",
+          "section": "7.5.2 CPSR flags",
+          "page": 28,
+          "parts": ["arm60"]
+        },
+        "multiplyEarlyTermination": {
+          "quote": "The multiplier is shifted right 2 bits per cycle, and when it is zero the instruction terminates",
+          "document": "arm60",
+          "section": "10.3 Multiply and multiply accumulate",
+          "page": 58,
+          "parts": ["arm60"]
+        },
+        "multiplyWorstCase": {
+          "quote": "The maximum time taken by any multiply is therefore",
+          "document": "arm60",
+          "section": "10.17 Instruction speeds, Table 20",
+          "page": 65,
+          "parts": ["arm60"],
+          "value": "1S+16I"
+        },
+        "resetOverwrites": {
+          "quote": "Overwrites R14_svc and SPSR_svc by copying the current values of the PC and CPSR into them.",
+          "document": "arm60",
+          "section": "6.3.6 Reset",
+          "page": 14,
+          "parts": ["arm60"]
+        },
+        "resetUndefined": {
+          "quote": "The value of the saved PC and CPSR is not defined.",
+          "document": "arm60",
+          "section": "6.3.6 Reset",
+          "page": 14,
+          "parts": ["arm60"]
+        },
+        "resetForcesMode": {
+          "quote": "Forces M[4:0]=%10011 (Supervisor mode) and sets the I and F bits in the CPSR",
+          "document": "arm60",
+          "section": "6.3.6 Reset",
+          "page": 14,
+          "parts": ["arm60"]
+        },
+        "resetCost": {
+          "quote": "Nreset must remain LOW (and Nwait must remain HIGH) for at least two clock cycles, and during the LOW period the processor will perform dummy instruction fetches with the address incrementing from the point where reset was activated.",
+          "document": "arm60",
+          "section": "4 Description of Signals, Nreset",
+          "page": 4,
+          "parts": ["arm60"],
+          "value": 2
+        },
+        "interruptLatency": {
+          "quote": "The total time is therefore 28 processor cycles.",
+          "document": "arm60",
+          "section": "6.3.9 Interrupt Latencies",
+          "page": 15,
+          "parts": ["arm60"],
+          "value": 28
+        },
+        "cycleTypesPipelined": {
+          "quote": "In the following tables Nmreq and seq (which are pipelined up to one cycle ahead of the cycle to which they apply) are shown in the cycle in which they appear, so they predict the address of the next cycle.",
+          "document": "arm60",
+          "section": "10 Instruction Cycle Operations",
+          "page": 57,
+          "parts": ["arm60"]
+        },
+        "stretchingAccessTimes": {
+          "quote": "there is no limit upon the maximum period for which mclk may be stretched, or Nwait held LOW.",
+          "document": "arm60",
+          "section": "8.6 Stretching access times",
+          "page": 54,
+          "parts": ["arm60"]
+        },
+        "nwaitTiedHigh": {
+          "quote": "If Nwait is not used in a system, it may be tied HIGH.",
+          "document": "arm60",
+          "section": "4 Description of Signals, Nwait",
+          "page": 4,
+          "parts": ["arm60"]
+        },
+        "mclkPhases": {
+          "quote": "The clock may be stretched indefinitely in either phase to allow access to slow peripherals or memory.",
+          "document": "arm60",
+          "section": "4 Description of Signals, mclk",
+          "page": 4,
+          "parts": ["arm60"]
+        },
+        "noMinimumClock": {
+          "quote": "ARM60 is a static design and there is no minimum clock speed.",
+          "document": "arm60",
+          "section": "13.3.5 Boundary Scan",
+          "page": 80,
+          "parts": ["arm60"]
+        },
+        "storedCounter": {
+          "quote": "the stored value will be address of the instruction plus 12",
+          "document": "arm60",
+          "section": "7.6.4 Use of R15",
+          "page": 31,
+          "parts": ["arm60"],
+          "value": 12
+        },
+        "prefetchOffset": {
+          "quote": "If the shift amount is specified in the instruction, the PC will be 8 bytes ahead. If a register is used to specify the shift amount the PC will be 12 bytes ahead.",
+          "document": "arm60",
+          "section": "7.3.5 Using R15 as an operand",
+          "page": 23,
+          "parts": ["arm60"],
+          "value": [8, 12]
+        },
+        "emptyRegisterList": {
+          "quote": "The only restriction is that the register list should not be empty.",
+          "document": "arm60",
+          "section": "7.9 Block Data Transfer",
+          "page": 34,
+          "parts": ["arm60"]
+        },
+        "lockDuringSwap": {
+          "quote": "It is active only during the data swap (SWP) instruction.",
+          "document": "arm60",
+          "section": "4 Description of Signals, lock",
+          "page": 5,
+          "parts": ["arm60"]
+        },
+        "ntransUserMode": {
+          "quote": "Ntrans",
+          "document": "arm60",
+          "section": "4 Description of Signals, Ntrans",
+          "page": 5,
+          "parts": ["arm60"]
+        },
+        "coprocessorAbsent": {
+          "quote": "it must not drive cpa or cpb LOW. These will remain HIGH, causing the undefined instruction trap to be taken.",
+          "document": "arm60",
+          "section": "10.15 Undefined instructions and coprocessor absent",
+          "page": 64,
+          "parts": ["arm60"]
+        },
+        "undefinedNotTrapping": {
+          "quote": "some instruction codes are not defined but do not cause the Undefined instruction trap to be taken",
+          "document": "arm60",
+          "section": "7.14 Instruction Set Summary, note beneath Figure 28",
+          "page": 47,
+          "parts": ["arm60"]
+        },
+        "conditionNotMet": {
+          "quote": "Any instruction whose condition code is not met will fail to execute. It will add one cycle to the execution time of the code segment in which it is embedded",
+          "document": "arm60",
+          "section": "10.16 Unexecuted instructions",
+          "page": 64,
+          "parts": ["arm60"]
+        },
+        "neverCondition": {
+          "quote": "The never (NV) class of condition codes shall not be used as they will be redefined in future variants of the ARM architecture.",
+          "document": "arm60",
+          "section": "7.1 The condition field",
+          "page": 17,
+          "parts": ["arm60"]
+        },
+        "teqp": {
+          "quote": "its effect is to move SPSR_<mode> to CPSR if the processor is in a privileged mode and to do nothing if in User mode.",
+          "document": "arm60",
+          "section": "7.3.6 The TEQ, TST, CMP and CMN opcodes",
+          "page": 23,
+          "parts": ["arm60"]
+        },
+        "unalignedLoad": {
+          "quote": "an address offset from a word boundary will cause the data to be rotated into the register so that the addressed byte occupies bits 0 to 7",
+          "document": "arm60",
+          "section": "7.6.3 Little Endian Configuration",
+          "page": 30,
+          "parts": ["arm60"]
+        },
+        "endianness": {
+          "quote": "ARM processors which do not have selectable Endianism (ARM2, ARM2aS, ARM3, ARM61) are Little Endian.",
+          "document": "arm60",
+          "section": "4 Description of Signals, bigend",
+          "page": 6,
+          "parts": ["arm60"]
+        },
+        "lateAbort": {
+          "quote": "When it is HIGH (Late Abort) the modified base register of an aborted LDR or STR instruction is written back.",
+          "document": "arm60",
+          "section": "4 Description of Signals, lateabt",
+          "page": 6,
+          "parts": ["arm60"]
+        },
+        "provisionalFigures": {
+          "quote": "The timing parameters given here are preliminary data and subject to change when device characterisation is complete.",
+          "document": "arm60",
+          "section": "12 AC Parameters",
+          "page": 68,
+          "parts": ["arm60"]
+        },
+        "seqDefinition": {
+          "quote": "will become HIGH when the address of the next memory cycle will be related to that of the last memory access. The new address will either be the same as or 4 greater than the old one.",
+          "document": "arm60",
+          "section": "4 Description of Signals, seq",
+          "page": 5,
+          "parts": ["arm60"]
+        },
+        "nopcDefinition": {
+          "quote": "When LOW this signal indicates that the processor is fetching an instruction from memory; when HIGH data (if anything) is being transferred.",
+          "document": "arm60",
+          "section": "4 Description of Signals, Nopc",
+          "page": 5,
+          "parts": ["arm60"]
+        },
+        "exceptionEntry": {
+          "quote": "Exceptions (and software interrupts) force the PC to a particular value and refill the instruction pipeline from there.",
+          "document": "arm60",
+          "section": "10.9 Software interrupt and exception entry",
+          "page": 61,
+          "parts": ["arm60"]
+        },
+        "shiftBitSeven": {
+          "quote": "Note that the zero in bit 7 of an instruction with a register controlled shift is compulsory; a one in this bit will cause the instruction to be a multiply or undefined instruction.",
+          "document": "arm60",
+          "section": "7.3.2 Shifts",
+          "page": 23,
+          "parts": ["arm60"]
+        },
+        "lslZero": {
+          "quote": "Note that LSL #0 is a special case, where the shifter carry out is the old value of the CPSR C flag.",
+          "document": "arm60",
+          "section": "7.3.2 Shifts",
+          "page": 21,
+          "parts": ["arm60"]
+        },
+        "lsrZero": {
+          "quote": "The form of the shift field which might be expected to correspond to LSR #0 is used to encode LSR #32, which has a zero result with bit 31 of Rm as the carry output.",
+          "document": "arm60",
+          "section": "7.3.2 Shifts",
+          "page": 21,
+          "parts": ["arm60"]
+        },
+        "rrx": {
+          "quote": "rotate right extended (RRX). This is a rotate right by one bit position of the 33 bit quantity formed by appending the CPSR C flag to the most significant end of the contents of Rm",
+          "document": "arm60",
+          "section": "7.3.2 Shifts",
+          "page": 22,
+          "parts": ["arm60"]
+        },
+        "registerShiftByte": {
+          "quote": "Only the least significant byte of the contents of Rs is used to determine the shift amount.",
+          "document": "arm60",
+          "section": "7.3.2 Shifts",
+          "page": 22,
+          "parts": ["arm60"]
+        },
+        "logicalFlags": {
+          "quote": "the C flag will be set to the carry out from the barrel shifter (or preserved when the shift operation is LSL #0), the Z flag will be set if and only if the result is all zeros",
+          "document": "arm60",
+          "section": "7.3.1 CPSR flags",
+          "page": 19,
+          "parts": ["arm60"]
+        },
+        "arithmeticFlags": {
+          "quote": "The C flag will be set to the carry out of bit 31 of the ALU, the Z flag will be set if and only if the result was zero",
+          "document": "arm60",
+          "section": "7.3.1 CPSR flags",
+          "page": 20,
+          "parts": ["arm60"]
+        },
+        "immediateRotate": {
+          "quote": "The immediate value is zero extended to 32 bits, and then subject to a rotate right by twice the value in the rotate field.",
+          "document": "arm60",
+          "section": "7.3.3 Immediate operand rotates",
+          "page": 23,
+          "parts": ["arm60"]
+        },
+        "branchOffset": {
+          "quote": "Branch instructions contain a signed 2's complement 24 bit offset. This is shifted left two bits, sign extended to 32 bits, and added to the PC.",
+          "document": "arm60",
+          "section": "7.2 Branch and branch with link",
+          "page": 17,
+          "parts": ["arm60"]
+        },
+        "branchPrefetch": {
+          "quote": "The branch offset must take account of the prefetch operation, which causes the PC to be 2 words (8 bytes) ahead of the current instruction.",
+          "document": "arm60",
+          "section": "7.2 Branch and branch with link",
+          "page": 17,
+          "parts": ["arm60"]
+        },
+        "writingR15": {
+          "quote": "When Rd is R15 and the S flag is set the result of the operation is placed in R15 and the SPSR corresponding to the current mode is moved to the CPSR.",
+          "document": "arm60",
+          "section": "7.3.4 Writing to R15",
+          "page": 23,
+          "parts": ["arm60"]
+        },
+        "blockTransferOrder": {
+          "quote": "The registers are transferred in the order lowest to highest, so R15 (if in the list) will always be transferred last. The lowest register also gets transferred to/from the lowest memory address.",
+          "document": "arm60",
+          "section": "7.9 Block Data Transfer",
+          "page": 34,
+          "parts": ["arm60"]
+        },
+        "unalignedLoadBigEndian": {
+          "quote": "An address offset of 0 or 2 from a word boundary will cause the data to be rotated into the register so that the addressed byte occupies bits 31 through 24.",
+          "document": "arm60",
+          "section": "7.6.3 Big Endian Configuration",
+          "page": 31,
+          "parts": ["arm60"]
+        },
+        "wordStoreUnaffected": {
+          "quote": "The word presented to the data bus is not affected if the address is not word aligned.",
+          "document": "arm60",
+          "section": "7.6.3 Little Endian Configuration",
+          "page": 30,
+          "parts": ["arm60"]
+        },
+        "postIndexedRmEqualsRn": {
+          "quote": "A post-indexed LDR",
+          "document": "arm60",
+          "section": "7.6.5 Restriction on the use of base register",
+          "page": 31,
+          "parts": ["arm60"]
+        },
+        "r15AsBase": {
+          "quote": "When using R15 as the base register one must remember that it contains an address 8 bytes on from the address of the current instruction.",
+          "document": "arm60",
+          "section": "7.6.4 Use of R15",
+          "page": 31,
+          "parts": ["arm60"]
+        },
+        "byteLoadZeroFilledBigEndian": {
+          "quote": "The selected byte is placed in the bottom 8 bits of the destination register and the remaining bits of the register are filled with zeros.",
+          "document": "arm60",
+          "section": "7.6.3 Big Endian Configuration",
+          "page": 31,
+          "parts": ["arm60"]
+        },
+        "abortDuringBlockLoad": {
+          "quote": "All register overwriting is prevented after the Abort is indicated",
+          "document": "arm60",
+          "section": "6.3.4 Abort",
+          "page": 13,
+          "parts": ["arm60"]
+        },
+        "swapIsLocked": {
+          "quote": "implemented as a memory read followed by a memory write which are",
+          "document": "arm60",
+          "section": "7.12 Single Data Swap",
+          "page": 38,
+          "parts": ["arm60"]
+        },
+        "modeBitsOnlyDescribed": {
+          "quote": "Not all combinations of the mode bits define a valid processor mode. Only those explicitly described shall be used.",
+          "document": "arm60",
+          "section": "6.2 The Program Status Registers",
+          "page": 11,
+          "parts": ["arm60"]
+        },
+        "reservedBitsPreserved": {
+          "quote": "Unused bits in the PSRs are reserved and their state shall be preserved when changing the flag or control bits.",
+          "document": "arm60",
+          "section": "6.2 The Program Status Registers",
+          "page": 11,
+          "parts": ["arm60"]
+        },
+        "modes26bit": {
+          "quote": "There are a total of ten operating modes in two overlapping sets.",
+          "document": "appnote11",
+          "section": "2 Operating Modes",
+          "page": 1,
+          "parts": ["arm60"],
+          "value": {
+            "usr26": 0,
+            "fiq26": 1,
+            "irq26": 2,
+            "svc26": 3
+          },
+          "why": "ARM60 Table 1 prints the six 32-bit encodings and no more, and ARM610 Table 2 is identical to it. The four 26-bit encodings appear in no datasheet found; Application Note 11 Table 1 is where they are printed, and the ARM60 datasheet names that note by title."
+        },
+        "arm2asFallback": {
+          "quote": "In all cases, if these restrictions are not observed, the behaviour of the processor is the same as that of the ARM2aS macrocell. However there is no guarantee that future ARM processors will behave in the same way.",
+          "document": "appnote11",
+          "section": "3.2 Instruction Set Limitations",
+          "page": 1,
+          "parts": ["arm60"],
+          "why": "This is why every 'shall not be used' in the ARM60 datasheet has an answer somewhere, and why that answer is not this part's own document. It is also why the published corpus is not evidence about those corners: the part it was recorded from is one of the future processors the sentence declines to guarantee."
+        },
+        "coreIsTheArm6": {
+          "quote": "The CPU within ARM610 is the ARM6.",
+          "document": "arm610",
+          "section": "1 Introduction",
+          "page": 9,
+          "parts": ["arm60"],
+          "why": "Recorded because it is the reason the catalogue could grow and the reason it has not. The instruction set carries across ARM60, ARM600 and ARM610; the bus does not, and only ARM60 has a document that gives it cycle by cycle."
+        }
+      }
+    }
+  ]
+}

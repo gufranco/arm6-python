@@ -1,0 +1,167 @@
+{
+  "note": "Where sources part, where a document stops, and where this package declines to model something. Each entry says what the package does today, what would settle it, and how much it matters. Nothing here is resolved by picking the more convenient source.",
+  "writtenUpIn": "OPEN-QUESTIONS.md, which is the same content written for a reader rather than for a test.",
+  "divergences": [
+    {
+      "id": "registerShiftCycleType",
+      "topic": "What the extra cycle of a register-specified shift is",
+      "status": "open",
+      "severity": "low",
+      "whatDisagrees": "Two chapters of the ARM60 datasheet. Table 5 gives a data operation with a register-specified shift two rows whose pins read seq=0, Nmreq=1 and then seq=1, Nmreq=0, which Table 3 names an internal cycle followed by a sequential one. Table 20 costs the same form at 1S plus 1S for SHIFT(Rs).",
+      "whyItMatters": "One cycle either way on one of the commonest instruction forms there is. The count agrees; only the type differs.",
+      "packageFollows": "Table 5, so the extra cycle is internal. The per-cycle table states the pins rather than summarising them, and the same pin pattern appears in Table 6 for a multiply by 0 or 1, which Table 20 costs at 1S+1I. Two of the three readings in one document say internal.",
+      "wouldSettleIt": "A later issue of the datasheet, or a measurement of the Nmreq pin on real silicon during a register-shifted data operation.",
+      "notes": "ARM DDI 0020C gives the ARM7 an extra 1I here, which is the same type this package follows, and ARM7 is a different architecture so it is corroboration rather than authority."
+    },
+    {
+      "id": "immediateRotateCarry",
+      "topic": "What the shifter carry is after an immediate operand is rotated",
+      "status": "open",
+      "severity": "low",
+      "whatDisagrees": "Nothing disagrees. The document stops. Section 7.3.3 gives the immediate value and the rotate and says nothing about the shifter's carry output, while section 7.3.1 says a logical operation takes its C flag from the barrel shifter.",
+      "whyItMatters": "Every logical operation with an immediate operand and the S bit set writes a C flag that the datasheet does not specify.",
+      "packageFollows": "A rotate of zero passes the old flag through and any other rotate takes bit 31 of the result, which is what the filtered corpus shows.",
+      "wouldSettleIt": "A sentence in a document, or a measurement on real silicon of the C flag after an immediate rotate."
+    },
+    {
+      "id": "unspecifiedEncodings",
+      "topic": "What the encodings that do not trap actually do",
+      "status": "open",
+      "severity": "low",
+      "whatDisagrees": "The note beneath Figure 28 says some instruction codes are not defined but do not cause the undefined instruction trap, giving a multiply with bit 5 or bit 6 set as its example, and does not say what they do. Application Note 11 says the behaviour of an unobserved restriction is the ARM2aS macrocell's.",
+      "whyItMatters": "A program that executes one of these gets an answer from the silicon and no answer from this package.",
+      "packageFollows": "It refuses, naming the encoding. Choosing a behaviour would mean inventing one, and the document that would settle it is the VTI data book for the ARM2aS macrocell, which is not pinned here.",
+      "wouldSettleIt": "The VTI ARM data book, read for the ARM2aS macrocell's answer to each of these encodings."
+    },
+    {
+      "id": "ntransOnStoreRegister",
+      "topic": "What Ntrans does during a store register",
+      "status": "open",
+      "severity": "low",
+      "whatDisagrees": "Table 8 heads a column Ntrans and prints no values beneath it, in either of its two rows. Every other column in that table is filled.",
+      "whyItMatters": "Table 8 is the only instruction table that heads that column, so the one place the datasheet chose to draw attention to the pin is the one place it left blank.",
+      "packageFollows": "The signal chapter, which gives Ntrans as LOW when the processor is in user mode, so the pin follows the mode rather than the instruction. Table 12 corroborates it: exception entry prints Ntrans HIGH for all three cycles, which is what a change into a privileged mode looks like.",
+      "wouldSettleIt": "A later issue of the datasheet with the column filled in, or a measurement of the pin during a store from user mode."
+    },
+    {
+      "id": "arm600Datasheet",
+      "topic": "The ARM600 has no datasheet anybody has published",
+      "status": "open",
+      "severity": "medium",
+      "whatDisagrees": "Nothing. The document does not exist as far as this project can find. The ARM610 datasheet states the ARM600 delta as five items, every one of them a bus or packaging difference, which is the best available substitute and is not a cycle table.",
+      "whyItMatters": "The core is the same, so the instruction set would carry across unchanged. What is missing is the bus, which is what this family models a clocked part down to.",
+      "packageFollows": "The catalogue holds ARM60 alone. ARM600 is not modelled and is not approximated from its neighbour.",
+      "wouldSettleIt": "An ARM600 datasheet with a chapter at the resolution of ARM60's chapter 10."
+    },
+    {
+      "id": "arm610CycleResolution",
+      "topic": "The ARM610 bus is a different machine from the one ARM60 documents",
+      "status": "open",
+      "severity": "medium",
+      "whatDisagrees": "Nothing disagrees; the two parts differ. ARM610 chapter 10 gives two input clocks rather than one, two cycle types rather than four, SEQ derived from nMREQ rather than driven independently, the clock a cycle runs on decided by whether the cache hit, and sequential runs interrupted on a 256 word boundary so the memory management unit can check the next sub-page. There is no instruction cycle chapter in that document.",
+      "whyItMatters": "The ARM610 datasheet is pinned here and is a fine second witness for the instruction set, so the temptation is to model the part from it. Its bus cannot be taken from ARM60's and it does not carry one of its own.",
+      "packageFollows": "The catalogue holds ARM60 alone, and the ARM610 datasheet is cited only for the instruction set and the programmer's model.",
+      "wouldSettleIt": "An ARM610 document with per-instruction per-cycle bus behaviour, or a measurement of the part."
+    },
+    {
+      "id": "arm61Datasheet",
+      "topic": "ARM61 is a real part with no datasheet found",
+      "status": "open",
+      "severity": "low",
+      "whatDisagrees": "Nothing. The ARM60 datasheet names ARM61 twice, once in the list of parts without selectable endianness and once in the list of parts supporting the early abort mechanism, and no datasheet for it has been found.",
+      "whyItMatters": "It is a member of this family that this package cannot model, and naming it is the difference between a gap somebody knows about and a gap nobody does.",
+      "packageFollows": "The catalogue does not hold it.",
+      "wouldSettleIt": "An ARM61 datasheet."
+    },
+    {
+      "id": "noSiliconMeasurement",
+      "topic": "Nothing here rests on a measurement of real silicon",
+      "status": "open",
+      "severity": "medium",
+      "whatDisagrees": "Nothing disagrees. This is a statement about the evidence rather than about the part.",
+      "whyItMatters": "Rung two of the family ladder is a measurement on real hardware and rung three is a simulation of the die. Both are empty here. No ARM60 has been probed for this package and no implementation of this architecture in reconfigurable logic is known to exist, so every claim rests on a document or on a recording from a later part.",
+      "packageFollows": "The documents, and it says so in the authority block of the record rather than leaving a reader to infer the ladder.",
+      "wouldSettleIt": "A logic analyser on the pins of a real ARM60, or a die photograph read into a netlist."
+    },
+    {
+      "id": "provisionalAcParameters",
+      "topic": "The AC parameters are preliminary data and the datasheet says so",
+      "status": "open",
+      "severity": "low",
+      "whatDisagrees": "Nothing disagrees. Chapter 12 opens by calling its own figures preliminary data subject to change when device characterisation is complete.",
+      "whyItMatters": "It bounds one claim and not another. The cycle counts in chapter 10 carry no such warning and are used freely; the clock rate derived from Tckl and Tckh is provisional and is only ever printed as a comparison, never used to compute anything.",
+      "packageFollows": "It uses chapter 10 without qualification, and prints the word provisional beside anything derived from chapter 12.",
+      "wouldSettleIt": "A later issue of the datasheet with characterised figures."
+    },
+    {
+      "id": "bigendDefault",
+      "topic": "Which way round the bigend pin is tied",
+      "status": "open",
+      "severity": "low",
+      "whatDisagrees": "Nothing disagrees. The pin is an input and a board ties it, so the part has no default and the datasheet names none.",
+      "whyItMatters": "A word load from an unaligned address, a byte load and a byte store all read differently depending on the level, and the two configurations get separate sections in the datasheet.",
+      "packageFollows": "Little endian, because that is what the parts without the pin are and because a store has to be constructible without a board attached. Both configurations are modelled and either can be asked for.",
+      "wouldSettleIt": "Nothing, on the part. It is settled per board by whoever ties the pin."
+    },
+    {
+      "id": "twentySixBitConfiguration",
+      "topic": "The 26 bit program space configuration is not modelled",
+      "status": "notADisagreement",
+      "severity": "low",
+      "whatDisagrees": "Nothing. Chapter 9 says the remainder of the document describes ARM60 configured for a 32 bit program and data space, and recommends that configuration for all new designs.",
+      "whyItMatters": "Two of the three configurations the part offers are outside what this package models, and the address exception vector at 0x14 exists only in them.",
+      "packageFollows": "The configuration the document describes. The four 26 bit mode encodings are modelled because they are reachable from a 32 bit configuration and Application Note 11 gives them; the 26 bit configuration itself, with prog32 LOW, is not.",
+      "wouldSettleIt": "Nothing is unknown here. It is a scope decision, recorded so the omission is deliberate rather than accidental."
+    },
+    {
+      "id": "coprocessorAttached",
+      "topic": "No coprocessor is attached and none is modelled",
+      "status": "notADisagreement",
+      "severity": "low",
+      "whatDisagrees": "Nothing. Section 10.15 states what happens when a coprocessor cannot perform an instruction: it must not drive cpa or cpb LOW, they remain HIGH, and the undefined instruction trap is taken.",
+      "whyItMatters": "The busy-wait cycles that Table 20 calls b are always zero here, and all three coprocessor rows of Figure 28 take the undefined trap.",
+      "packageFollows": "Section 10.15, which is exactly what an absent coprocessor looks like on this bus. Attaching one would need a coprocessor to attach, and no document for one is pinned here.",
+      "wouldSettleIt": "Nothing is unknown. Modelling an attached coprocessor would need a document describing a particular one."
+    },
+    {
+      "id": "abortAndMemoryManagement",
+      "topic": "The abort pin is not driven and the two abort vectors are not reached",
+      "status": "notADisagreement",
+      "severity": "low",
+      "whatDisagrees": "Nothing. The datasheet describes both aborts fully, including which instructions are restartable and what the lateabt pin changes.",
+      "whyItMatters": "Two of the seven vectors are unreachable in this package, and the lateabt configuration it carries is therefore never exercised.",
+      "packageFollows": "It models the vectors and the entry sequence, and provides no way for a memory system to raise the pin, because the store here never refuses an access.",
+      "wouldSettleIt": "Nothing is unknown. It needs a memory system that can refuse, which is a caller's to supply."
+    },
+    {
+      "id": "boundaryScan",
+      "topic": "Boundary scan is documented and deliberately not modelled",
+      "status": "notADisagreement",
+      "severity": "low",
+      "whatDisagrees": "Nothing. Chapter 13 documents the whole thing, including the four bit instruction register and eight public instructions.",
+      "whyItMatters": "It is a documented feature of the part that this package does not have, and an omission nobody wrote down reads as an oversight.",
+      "packageFollows": "It models the core rather than the test port.",
+      "wouldSettleIt": "Nothing is unknown. It is out of scope for a model of what the part computes."
+    },
+    {
+      "id": "registerCountContradiction",
+      "topic": "Whether the part has twenty seven registers or thirty one",
+      "status": "closed",
+      "severity": "low",
+      "whatDisagrees": "Page 1 of the ARM60 datasheet says the part has a bank of 27 registers. Page 10 of the same document says 37 in total, made up of 31 general purpose and 6 status registers.",
+      "whyItMatters": "It is the first number a reader meets and it is wrong.",
+      "packageFollows": "Page 10. The block diagram on page 2 prints 31 general and 6 status, the ARM610 datasheet agrees, and 27 is the figure the earlier part had, carried into the text when the document was adapted.",
+      "closedBy": "Three readings against one, two of them in the same document as the outlier."
+    },
+    {
+      "id": "signalChapterPinNumbers",
+      "topic": "Whether the signal chapter or the pinout gives the right pin numbers",
+      "status": "closed",
+      "severity": "low",
+      "whatDisagrees": "The signal chapter prints two consecutive rows both named Nrw, at pins 19 and 13, and gives tms and tdi the same pin number, 68.",
+      "whyItMatters": "Four pins are named wrongly in the chapter a reader goes to for pin names.",
+      "packageFollows": "Chapter 14, the packaging and pinout chapter, which gives pin 13 as Nbw and pin 19 as Nrw, and tms as 68 with tdi as 70. The second Nrw row's own description is of a byte and word transfer, which is Nbw, so the row is Nbw printed under the wrong name.",
+      "closedBy": "The pinout chapter, read after the signal chapter. Neither erratum is findable by searching; both come out of reading the document to the end."
+    }
+  ]
+}

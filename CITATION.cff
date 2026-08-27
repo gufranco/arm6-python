@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+title: arm6-python
+message: >-
+  If you use this work, or the readings it was settled against, please cite it.
+type: software
+authors:
+  - given-names: Gustavo
+    family-names: Franco
+    alias: gufranco
+repository-code: https://github.com/gufranco/arm6-python
+url: https://github.com/gufranco/arm6-python
+abstract: >-
+  A model of the ARM60, a 32 bit RISC processor, driven a cycle at a time and
+  held to its own datasheet for every instruction and every cycle it spends.
+  Every fact carries the sentence it came from and the page it was on, checked
+  against a rendered image of that page because the document has no text layer,
+  and the whole processor state is compared against a filtered corpus after each
+  instruction. Nothing in it starts from a clean machine, because silicon powers
+  up holding whatever it holds.
+keywords:
+  - emulation
+  - arm
+  - arm6
+  - arm60
+  - armv3
+  - processor
+  - hardware-model
+  - conformance
+license: MIT
+version: 0.1.0

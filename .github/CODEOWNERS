@@ -1,0 +1,11 @@
+# Every path, one owner. The repository has a single maintainer, so this file
+# exists to make review required rather than to route it: without an owner,
+# GitHub's branch protection has nobody to ask.
+*       @gufranco
+
+# The three files that decide what everything else is checked against. A change
+# to any of them changes what "correct" means for the whole package, which is a
+# different kind of change from editing the code that follows them.
+/conformance/hardware.json      @gufranco
+/conformance/divergences.json   @gufranco
+/conformance/pinned.json        @gufranco

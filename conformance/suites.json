@@ -1,0 +1,188 @@
+{
+  "comment": "The conformance corpus this core is held to, pinned by commit so a run is reproducible. Read conformance/hardware.json first: it carries what the manufacturer states, and it outranks everything here.",
+  "suites": [
+    {
+      "name": "ARM7TDMI",
+      "repository": "https://github.com/SingleStepTests/ARM7TDMI.git",
+      "commit": "e3097d88d428752736b949d94c094d5da50f0db6",
+      "committed": "2025-06-13",
+      "sparse": ["v1"],
+      "path": "v1",
+      "model": "arm60",
+      "armStateFiles": 20,
+      "casesPerFile": 50000,
+      "armStateCases": 1000000,
+      "archived": false,
+      "checkedOn": "2026-08-27"
+    }
+  ],
+  "provenance": {
+    "note": "Where these recordings come from, so a reader can weigh them rather than only count them. This is not a capture from a part.",
+    "statedInItsOwnReadme": "EXPERIMENTAL repository for ARM7TDMI single-step tests",
+    "generatedFrom": "NanoBoyAdvance, named by the publisher in the same readme: These tests are generated from fleroviux's excellent NanoBoyAdvance.",
+    "whatThatMeansForTheLadder": "It is a recording from an implementation of a later part, so it sits at rung four. It is a good source for instruction-level behaviour nobody wrote down and a poor one for anything the ARM60 datasheet printed. Where the two disagree the document wins.",
+    "readOn": "2026-08-27"
+  },
+  "whyThePartIsNotThisPart": {
+    "note": "The corpus was recorded from an ARM7TDMI, which is ARMv4T. This member models an ARM6, which is ARMv3. They share most of an instruction set and they are not the same part, so the filter below is not tidying: every entry in it is a place where the two parts genuinely differ or where one of them has no answer.",
+    "multiplier": "ARM60 section 10.3 gives a 2 bit Booth's algorithm, so m runs to 16 and the worst case is 1S+16I. The ARM7TDMI datasheet gives an 8 bit Booth's algorithm, so its m runs to 4 and its worst case is 1S+4I. That is why no cycle or timing field of this corpus is ever read.",
+    "thumbBit": "Bit 5 of the PSR is the T bit on the ARM7TDMI. ARM60 section 7.4.2 names it in the reserved list, in prose. No case in the ARM-state files carries it set, which was measured rather than assumed."
+  },
+  "whatIsRead": {
+    "state": "The initial and final state blocks: R0 to R15, the banked registers of every mode, the CPSR and the five SPSRs. That is the comparison.",
+    "memory": "The data field of every read transaction, used to seed memory before the case runs. The corpus carries no memory block of its own, so the only record of what the generator's memory held is what its core read out of it. That is initial state rather than bus behaviour, and without it no instruction that touches memory could be replayed at all.",
+    "neverRead": [
+      "cycle, which is the generator's own cycle numbering and which its readme already marks experimental",
+      "access, which is that part's bus signalling and not this part's",
+      "the number and order of transactions, which is that part's bus behaviour",
+      "the pipeline words and the trailing access flag in the state block, which are artefacts of the generator's core rather than architectural state this part publishes"
+    ],
+    "why": "The objection to the transaction block is that it describes a different part's bus. It is not an objection to what a byte of memory held."
+  },
+  "filter": {
+    "note": "Every exclusion names the sentence behind it, and almost all of them are a sentence of the form 'shall not be used'. Those were collected by reading the document for that phrase rather than by adding a rule whenever a comparison failed, which is the same work in the opposite order and a very different thing. The counts below are disjoint: the runner reports the first reason it finds for a case, so a case that breaks two rules is counted once, under the first. Measured on 2026-08-27 against the pinned commit.",
+    "wholeFiles": [
+      {
+        "files": ["arm_bx", "arm_ldrh_strh", "arm_ldrsb_ldrsh", "arm_mull_mlal"],
+        "cases": 200000,
+        "why": "No such row exists in ARM60 Figure 28. The figure prints the whole instruction set on one page and has no branch-and-exchange row, no halfword transfer row, no signed load row and no long multiply row. These encodings are not this part's."
+      },
+      {
+        "files": ["arm_cdp", "arm_mcr_mrc", "arm_stc_ldc"],
+        "cases": 150000,
+        "why": "A coprocessor answer is the board's rather than the part's, and no coprocessor is attached here. ARM60 section 10.15 says a coprocessor which cannot perform an instruction leaves cpa and cpb HIGH and the undefined instruction trap is taken, which is what this package does and is not what the generator's board did."
+      }
+    ],
+    "perCase": [
+      {
+        "criterion": "the initial CPSR mode field is 0b11111",
+        "cases": 81266,
+        "why": "System mode. It is absent from ARM60 Table 1 and from ARM610 Table 2, and present in the ARM7TDMI's own mode table. A case in a mode this part does not have describes a different processor."
+      },
+      {
+        "criterion": "an MSR whose field bits are neither of ARM60's two forms",
+        "cases": 73965,
+        "why": "ARM60 Figure 14 prints two MSR encodings and neither is a field mask: bits 19 to 16 are 1001 for the whole PSR and 1000 for the flags. The generator's part has the fsxc field mask instead, so every other value in those bits is an encoding this part does not have."
+      },
+      {
+        "criterion": "R15 named as an operand of a multiply",
+        "cases": 9146,
+        "why": "Section 7.5.3: Rd, Rm, Rs and Rn are expressions evaluating to a register number other than R15."
+      },
+      {
+        "criterion": "R15 named as an operand of a swap",
+        "cases": 7820,
+        "why": "Section 7.12: R15 shall not be used as an operand (Rd, Rn or Rs) in a SWP instruction."
+      },
+      {
+        "criterion": "base write-back with the S bit of a block transfer set",
+        "cases": 7232,
+        "why": "Section 7.7.4, twice: base write-back shall not be used when this mechanism is employed."
+      },
+      {
+        "criterion": "an SPSR reached from a user mode",
+        "cases": 6604,
+        "why": "Section 7.4.1: no attempt shall be made to access an SPSR in User mode, since no such register exists."
+      },
+      {
+        "criterion": "the S bit of a block transfer set outside a privileged mode",
+        "cases": 5919,
+        "why": "Section 7.7.4: the S bit should only be set if the instruction is to execute in a privileged mode."
+      },
+      {
+        "criterion": "the S flag set with R15 as the destination, in a user mode",
+        "cases": 5917,
+        "why": "Section 7.3.4 gives this form a meaning and then says it shall not be used in User mode, where there is no SPSR for the sentence to describe."
+      },
+      {
+        "criterion": "a case whose recorded final CPSR names no ARM60 mode",
+        "cases": 4164,
+        "why": "The end state is a mode this part cannot be in, so the case describes a different processor whatever the instruction did."
+      },
+      {
+        "criterion": "write-back onto R15 as a transfer's base",
+        "cases": 4052,
+        "why": "Section 7.11.4: base write-back to R15 shall not be specified. A post-indexed transfer writes the base back whether or not W is set, so both forms are caught."
+      },
+      {
+        "criterion": "R15 as the base of a block transfer",
+        "cases": 2811,
+        "why": "Section 7.7.5: R15 shall not be used as the base register in any LDM or STM instruction."
+      },
+      {
+        "criterion": "R15 as the destination of a PSR read",
+        "cases": 2767,
+        "why": "Section 7.4.3: Rd and Rm are expressions evaluating to a register number other than R15."
+      },
+      {
+        "criterion": "a MUL or MLA whose Rd equals its Rm",
+        "cases": 2746,
+        "why": "ARM60 section 7.5.1 states a result for this: a MUL gives zero and an MLA gives a meaningless result. The ARM7TDMI only prohibits it. One part answers and the other declines, so agreement would prove nothing."
+      },
+      {
+        "criterion": "R15 as a transfer's register offset",
+        "cases": 2744,
+        "why": "Section 7.6.4: R15 shall not be specified as the register offset (Rm)."
+      },
+      {
+        "criterion": "an eight bit immediate written into the whole PSR",
+        "cases": 2617,
+        "why": "Section 7.4.2: no attempt shall be made to write an 8 bit immediate value into the whole PSR since such an operation cannot preserve the reserved bits. Figure 14 gives the whole form no immediate encoding at all."
+      },
+      {
+        "criterion": "R15 as the register holding a shift amount",
+        "cases": 2603,
+        "why": "Section 7.3.2: Rs can be any general register other than R15."
+      },
+      {
+        "criterion": "a mode the generator's part cannot enter written into a PSR",
+        "cases": 1910,
+        "why": "ARM6 has four 26-bit modes, whose encodings carry a zero in M[4] and which only Application Note 11 prints. The generator's part has no such modes and forces that bit, so a case whose source names one is a case the two parts cannot agree about. A source naming no ARM60 mode at all fails the same test, because this part has no answer for it."
+      },
+      {
+        "criterion": "a post-indexed transfer whose offset register is its base",
+        "cases": 1293,
+        "why": "Section 7.6.5: a post-indexed LDR or STR where Rm=Rn shall not be used."
+      },
+      {
+        "criterion": "R15 as the source of a PSR write",
+        "cases": 199,
+        "why": "Section 7.4.3: Rd and Rm are expressions evaluating to a register number other than R15."
+      },
+      {
+        "criterion": "an LDM or STM whose register list is empty",
+        "cases": 5,
+        "why": "ARM60 section 7.9 states the one restriction on the list and this breaks it, without saying what happens. Both parts leave it undefined, so agreeing about it would prove nothing."
+      }
+    ],
+    "checkedAndNotExcluded": [
+      {
+        "what": "TEQP and the other three P forms",
+        "why": "ARM60 section 7.3.6 states the behaviour and the ARM7TDMI datasheet states the same one: move SPSR_<mode> to CPSR in a privileged mode, do nothing in User mode. Not a divergence, so the 4,797 cases carrying it stay in."
+      },
+      {
+        "what": "a multiply encoding with bit 5 or bit 6 set",
+        "why": "ARM60 says these do not trap and does not say what they do, so they would be excluded if they occurred. The generator never produces them and the measured count is zero. The check is kept anyway, because a count of zero that nobody looked for and a count of zero that somebody measured are different things."
+      },
+      {
+        "what": "a case with bit 5 of the CPSR set",
+        "why": "That is the T bit on the generator's part and a reserved bit on this one. The measured count in the ARM-state files is zero."
+      }
+    ],
+    "counted": {
+      "casesInTheRemainingFiles": 650000,
+      "removed": 225780,
+      "usable": 424220,
+      "compared": 424220,
+      "disagreements": 0,
+      "shareOfTheWholeCorpus": "42.4%",
+      "countsAreDisjoint": true,
+      "howItIsKnown": "Measured by running python3 -m conformance.singlestep against a checkout at the pinned commit, which prints every figure above and the disagreement count beside them."
+    },
+    "comparedAgainstAWiderReading": {
+      "note": "An earlier reading of this corpus filtered on three criteria only, the System mode cases, the multiply cases whose Rd equals their Rm, and the five empty register lists, and left 565,983 cases. That filter is a subset of this one and its figure is reproducible from the counts above: it is what remains when only those three are applied. This filter is stricter because the datasheet states seventeen further restrictions, each of which marks a place where ARM60 declines to say what happens and the generator's part does something anyway.",
+      "theThreeCriterionFigure": 565983,
+      "thisFigure": 424220
+    }
+  }
+}

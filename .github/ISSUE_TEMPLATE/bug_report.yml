@@ -1,0 +1,61 @@
+name: Something is wrong
+description: An instruction does the wrong thing, or nothing works at all
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This package is a processor and a loader for programs somebody else
+        wrote. Almost everything reported against it turns out to be one of two
+        things: the processor is fine and the image is not the one it was meant
+        to be, or there is no image at all. The first field tells all of us
+        which.
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: What the doctor says
+      description: |
+        Run `python3 -m upd7725.doctor` from the repository and paste all of it,
+        including any line that did not pass. Do not trim it: the digests it
+        prints are what settle most reports on their own.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: For an instruction, give its encoding and the state it should leave.
+      placeholder: "0x97c004 is JP with a 14-bit target, so pc should become 0x0001"
+    validations:
+      required: true
+
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened instead
+      description: The exact output or the whole traceback, pasted rather than described.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: The shortest thing that shows it
+      description: Python we can run as it stands, with no editing.
+      render: python
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Before submitting
+      options:
+        - label: The doctor output above is complete rather than trimmed
+          required: true
+        - label: I own any microcode I am naming, and I have attached none of it
+          required: true
