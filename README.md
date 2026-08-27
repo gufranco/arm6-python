@@ -4,7 +4,7 @@ An ARM60 you can drive from a clock, held to its own datasheet for every instruc
 
 [![CI](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml)
 
-**1** part, **62** quoted sentences placed on the page they cite, **424,220** recorded cases compared, **0** disagreements, **1,014** tests, **100%** statement and branch coverage, no dependencies
+**1** part, **62** quoted sentences placed on the page they cite, **424,220** recorded cases compared, **0** disagreements, **1,017** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from arm6 import Cpu, Memory
