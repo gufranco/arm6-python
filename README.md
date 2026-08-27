@@ -4,7 +4,7 @@ An ARM60 you can drive from a clock, held to its own datasheet for every instruc
 
 [![CI](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml)
 
-**1** part, **62** quoted sentences placed on the page they cite, **424,220** recorded cases compared, **0** disagreements, **938** tests, **100%** statement and branch coverage, no dependencies
+**1** part, **62** quoted sentences placed on the page they cite, **424,220** recorded cases compared, **0** disagreements, **1,006** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from arm6 import Cpu, Memory
@@ -129,19 +129,31 @@ The core is the same in ARM60, ARM600 and ARM610: the ARM610 datasheet says outr
 
 ## Reading without running
 
-A word can be read rather than executed:
+A word can be read rather than executed. A routine that waits for a byte to arrive and then reads it:
 
 ```python
-from arm6 import decode
+from arm6 import disassemble
 
-print(decode.describe(0x0AFFFFFE))
-print(decode.describe(0xE0010293))
+words = (0xE92D4010, 0xE3A04101, 0xE5D40020, 0xE3100001, 0x0AFFFFFC, 0xE5D40000, 0xE8BD8010)
+image = b"".join(word.to_bytes(4, "little") for word in words)
+
+for one in disassemble(image, address=0x100, stop_at_return=True):
+    print(f"0x{one.address:06X}  {one.word:08X}  {one.text}")
 ```
 
 ```
-EQ branch
-AL multiply
+0x000100  E92D4010  stmdb SP!, {R4, LR}
+0x000104  E3A04101  mov R4, #0x40000000
+0x000108  E5D40020  ldrb R0, [R4, #0x20]
+0x00010C  E3100001  tst R0, #0x1
+0x000110  0AFFFFFC  beq 0x000108
+0x000114  E5D40000  ldrb R0, [R4]
+0x000118  E8BD8010  ldmia SP!, {R4, PC}
 ```
+
+Each one carries what it is as well as how it reads: `condition` and `kind` in the datasheet's own vocabulary, `word`, `address`, `offset` and `size`, and `operand` for the one number the operand field denotes. That last one is resolved to an address wherever the addressing is self-contained, so a branch gives its target and a load relative to the program counter gives the address its literal sits at.
+
+`disassemble` goes straight through the image and follows nothing. Whether a word is code at all depends on how control reached it, so a caller who wants reachable code walks it themselves. `stop_at_return` is a convention rather than an encoding, because this part has no return instruction, only a program counter any instruction may write; it recognises the two shapes a compiler emits and says so rather than guessing at a computed jump.
 
 The eleven rows are Figure 28's, and what that figure does not have decides as much as what it does: no branch-and-exchange row, no halfword transfer row, no signed load row and no long multiply row. An encoding matching none of them is reported as outside the figure rather than guessed at.
 

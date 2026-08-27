@@ -32,6 +32,22 @@ class UnknownModelError(Arm6Error):
     __slots__ = ()
 
 
+class Truncated(Arm6Error):
+    """An offset with no whole instruction at it.
+
+    Raised by the disassembler rather than by the core, because a core that runs
+    off the end of memory has already been given a memory that answers, and a
+    reader walking an image has not. The offset is carried so a caller can say
+    where the image ran out.
+    """
+
+    __slots__ = ("offset",)
+
+    def __init__(self, offset: int) -> None:
+        self.offset = offset
+        super().__init__(f"no whole instruction at offset {offset}")
+
+
 class RunLimit(Arm6Error):
     """A bounded run gave up rather than hanging.
 

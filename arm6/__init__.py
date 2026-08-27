@@ -26,6 +26,7 @@ from . import clock as clock
 from . import core as core
 from . import dataops as dataops
 from . import decode as decode
+from . import disassembly as disassembly
 from . import errors as errors
 from . import memory as memory
 from . import models as models
@@ -36,11 +37,13 @@ from . import tally as tally
 from . import transfers as transfers
 from .clock import Clock
 from .core import VECTORS, Cpu
+from .disassembly import Instruction, disassemble
 from .errors import (
     Arm6Error,
     BadWaits,
     ClockClosed,
     RunLimit,
+    Truncated,
     UnknownModelError,
     WaitsRequired,
 )
@@ -66,16 +69,19 @@ __all__ = [
     "Cpu",
     "Cycles",
     "EmptyRegisterList",
+    "Instruction",
     "Memory",
     "Mode",
     "Model",
     "NoCoprocessor",
     "Registers",
     "RunLimit",
+    "Truncated",
     "UnknownMode",
     "UnknownModelError",
     "UnspecifiedEncoding",
     "Waits",
     "WaitsRequired",
     "__version__",
+    "disassemble",
 ]

@@ -145,13 +145,3 @@ def classify(word: int) -> str:
     if word & 0x00000010:
         return COPROCESSOR_REGISTER_TRANSFER
     return COPROCESSOR_DATA_OPERATION
-
-
-def describe(word: int) -> str:
-    """A word read rather than run, for a caller walking an image.
-
-    Deliberately shallow: the condition and the row, which is what Figure 28
-    itself gives. Anything finer is the instruction's own encoding and belongs
-    with the instruction rather than in a summary of the page.
-    """
-    return f"{condition_of(word)} {classify(word)}"

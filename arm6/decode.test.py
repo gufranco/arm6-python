@@ -236,18 +236,6 @@ class TheConditionFieldTest(unittest.TestCase):
         self.assertEqual(held, "AL")
 
 
-class ReadingWithoutRunningTest(unittest.TestCase):
-    def test_a_word_is_described_by_its_row_and_its_condition(self) -> None:
-        held = decode.describe(0x0AFFFFFE)
-
-        self.assertEqual(held, "EQ branch")
-
-    def test_an_unconditional_word_still_names_its_condition(self) -> None:
-        held = decode.describe(0xEF000000)
-
-        self.assertEqual(held, "AL software interrupt")
-
-
 class EncodingsTheDatasheetSaysDoNotTrapTest(unittest.TestCase):
     def test_a_multiply_with_bit_five_set_is_not_a_multiply(self) -> None:
         held = decode.classify(0xE00002B1)
