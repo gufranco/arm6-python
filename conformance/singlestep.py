@@ -391,7 +391,16 @@ def _writes_the_counter_with_the_flag(case: Case) -> bool:
 
 
 def _load(case: Case) -> Cpu:
-    """A part in exactly the state the case declares, and memory it can read."""
+    """A part in exactly the state the case declares, and memory it can read.
+
+    This is the one place in the repository that sets the program counter by hand
+    instead of resetting the part, and it is deliberate. A reset forces the
+    counter to zero, the mode to supervisor and the two interrupt disables on,
+    and it overwrites the supervisor link register with a value the datasheet
+    calls undefined. Every one of those is state this case declares, so resetting
+    here would destroy the thing being compared. Anywhere a caller has a choice,
+    `reset` is the way in.
+    """
     memory = Memory(fill=0)
     for size, address, held in case.reads:
         if size == 1:

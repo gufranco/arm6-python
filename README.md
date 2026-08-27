@@ -4,13 +4,12 @@ An ARM60 you can drive from a clock, held to its own datasheet for every instruc
 
 [![CI](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml)
 
-**1** part, **62** quoted sentences placed on the page they cite, **424,220** recorded cases compared, **0** disagreements, **903** tests, **100%** statement and branch coverage, no dependencies
+**1** part, **62** quoted sentences placed on the page they cite, **424,220** recorded cases compared, **0** disagreements, **905** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from arm6 import Cpu, Memory
 
-cpu = Cpu("arm60", Memory(image=(0xE3A0002A).to_bytes(4, "little"), fill=0))
-cpu.registers.pc = 0
+cpu = Cpu("arm60", Memory(image=(0xE3A0002A).to_bytes(4, "little"), fill=0)).reset()
 
 spent = cpu.step()
 
@@ -57,8 +56,7 @@ This is the one place this member behaves differently from its siblings, and the
 ```python
 from arm6 import Cpu, Waits
 
-cpu = Cpu("arm60", fill=0)
-cpu.registers.pc = 0
+cpu = Cpu("arm60", fill=0).reset()
 cpu.step()
 
 print(cpu.spent.ticks(Waits(sequential=1, nonsequential=3, internal=1, coprocessor=1)))
@@ -73,8 +71,7 @@ Section 8.6 says `mclk` may be stretched without limit and that `Nwait` may inse
 ```python
 from arm6 import Cpu, WaitsRequired
 
-cpu = Cpu("arm60", fill=0)
-cpu.registers.pc = 0
+cpu = Cpu("arm60", fill=0).reset()
 cpu.step()
 
 try:
@@ -97,8 +94,7 @@ The integer `step` returns is the cycle count, which is also the tick count in t
 from arm6 import Clock, Cpu, Memory
 
 image = (0xEB000000).to_bytes(4, "little") + (0xE1A00001).to_bytes(4, "little") * 8
-cpu = Cpu("arm60", Memory(image=image, fill=0), fill=0)
-cpu.registers.pc = 0
+cpu = Cpu("arm60", Memory(image=image, fill=0), fill=0).reset()
 
 with Clock(cpu) as clock:
     clock.run_for(2)
@@ -163,7 +159,23 @@ print(cpu.registers.read(0) != 0, cpu.registers.pc != 0)
 True True
 ```
 
-Construction puts every register in the state the rail coming up leaves it, the program counter included, so a newly built part executes rubbish from a rubbish address exactly as the silicon would. `reset()` then writes only the three things section 6.3.6 lists, and the saved counter and status it writes are scrambled because the datasheet says their value is not defined.
+Construction puts every register in the state the rail coming up leaves it, the program counter included, so a newly built part executes rubbish from a rubbish address exactly as the silicon would. Nothing arrives reset and nothing arrives cleared, because no board offers either.
+
+`reset()` is therefore how a caller gets anywhere, and it is what every example above opens with. It writes only the three things section 6.3.6 lists, forcing supervisor mode, setting both interrupt disables and fetching from address zero, and the saved counter and status it writes are scrambled because the datasheet says their value is not defined. It is not free either: it costs the two cycles of dummy fetches the datasheet requires plus the three of exception entry, and those five appear in the tally like any others.
+
+```python
+from arm6 import Cpu
+
+cpu = Cpu("arm60", fill=0).reset()
+
+print(cpu.registers.pc, cpu.mode.name, cpu.cycles, cpu.steps)
+```
+
+```
+0 svc32 5 0
+```
+
+The counter is at the reset vector, the clock has moved and the instruction count has not. One place in this repository sets the counter by hand instead: the corpus runner, because a recorded case declares the counter, the mode and the interrupt disables, and resetting would destroy the state under comparison.
 
 `fill=0` is how a caller asks for something quieter, and it exists for runs that have to get through a few dozen instructions rather than for convenience.
 

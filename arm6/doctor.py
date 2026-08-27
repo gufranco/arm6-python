@@ -124,14 +124,21 @@ def _default_build(name: str) -> Any:
 
 
 def _processor(name: str, build: Callable[[str], Any] = _default_build) -> Finding:
-    """Whether that part builds and runs, saying exactly what stopped it if not.
+    """Whether that part builds, resets and runs, saying what stopped it if not.
 
     It is driven rather than inspected. A part that imports and then refuses to
     execute an instruction is broken in a way that importing it cannot show.
+
+    The reset is part of what is driven rather than a way of getting to the
+    interesting bit. It is the one event that reads memory at an address nobody
+    chose, writes two banked registers, and forces a mode, so a report that
+    stepped an instruction without ever resetting has left the most board-shaped
+    thing this package does untested on the machine it exists to diagnose.
     """
     try:
         core = build(name)
-        core.registers.pc = 0
+        core.reset()
+        after = core.registers.pc
         spent = core.step()
     except Exception as trouble:
         return Finding(
@@ -141,7 +148,11 @@ def _processor(name: str, build: Callable[[str], Any] = _default_build) -> Findi
             "this is the core failing rather than anything to do with a document;"
             " the line above is what it said",
         )
-    return Finding(name, True, f"built and stepped, {spent} cycles spent")
+    return Finding(
+        name,
+        True,
+        f"built, reset to 0x{after:08X}, and stepped, {spent} cycles spent",
+    )
 
 
 def _documents(where: Path = DOCUMENTS) -> Finding:

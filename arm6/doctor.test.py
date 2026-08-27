@@ -90,6 +90,20 @@ class WhatIsActuallyOnThisMachineTest(unittest.TestCase):
 
         self.assertIn("cycles", held.detail)
 
+    def test_and_it_says_where_the_reset_left_the_counter(self) -> None:
+        held = doctor._processor("arm60")
+
+        self.assertIn("reset to 0x00000000", held.detail)
+
+    def test_a_part_that_builds_and_will_not_reset_is_reported_as_broken(self) -> None:
+        class WillNotReset:
+            def reset(self) -> None:
+                raise RuntimeError("no")
+
+        held = doctor._processor("arm60", build=lambda name: WillNotReset())
+
+        self.assertFalse(held.ok)
+
     def test_a_part_that_will_not_build_is_reported_with_what_stopped_it(self) -> None:
         def refuse(name: str) -> object:
             raise RuntimeError("no")

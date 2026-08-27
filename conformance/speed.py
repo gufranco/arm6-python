@@ -124,10 +124,16 @@ def _clock() -> float:  # pragma: no cover
 
 
 def build(part: str = "arm60") -> Cpu:
-    """A part pointed at a field of one instruction, with nothing else in the way."""
+    """A part reset onto a field of one instruction, with nothing else in the way.
+
+    Reset rather than a poke at the counter, because that is how a board gets a
+    part to address zero and because a harness that reaches into the register
+    file teaches the wrong thing to whoever reads it next. The five cycles it
+    costs are paid once per repeat and are swamped by the two hundred thousand
+    that follow.
+    """
     image = EXERCISE.to_bytes(4, "little") * 4096
-    held = Cpu(part, Memory(image=image, fill=0), fill=0)
-    held.registers.pc = 0
+    held: Cpu = Cpu(part, Memory(image=image, fill=0), fill=0).reset()
     return held
 
 
