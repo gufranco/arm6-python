@@ -105,13 +105,13 @@
     {
       "id": "bigendDefault",
       "topic": "Which way round the bigend pin is tied",
-      "status": "open",
+      "status": "notADisagreement",
       "severity": "low",
       "whatDisagrees": "Nothing disagrees. The pin is an input and a board ties it, so the part has no default and the datasheet names none.",
       "whyItMatters": "A word load from an unaligned address, a byte load and a byte store all read differently depending on the level, and the two configurations get separate sections in the datasheet.",
       "packageFollows": "neither",
       "reasoning": "Little endian, because that is what the parts without the pin are and because a store has to be constructible without a board attached. Both configurations are modelled and either can be asked for.",
-      "wouldSettleIt": "Nothing, on the part. It is settled per board by whoever ties the pin."
+      "wouldSettleIt": "Nothing, and that is the entry. The pin is an input, a board ties it, and both configurations are modelled here, so there is no fact about the part left to find. It is recorded because a reader choosing a configuration has to know the default was chosen rather than measured."
     },
     {
       "id": "twentySixBitConfiguration",

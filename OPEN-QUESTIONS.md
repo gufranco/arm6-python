@@ -86,23 +86,6 @@ processor is in user mode, so the pin follows the mode rather than the
 instruction. Table 12 corroborates it: exception entry prints `Ntrans` HIGH for
 all three of its cycles, which is what a change into a privileged mode looks like.
 
-### Which way round the bigend pin is tied
-
-The pin is an input and a board ties it, so the part has no default and the
-datasheet names none. It matters more than it sounds: an unaligned word load, a
-byte load and a byte store all get separate treatment in the two configurations,
-each with its own section.
-
-Both are modelled and either can be asked for. The default is little endian,
-because that is what the parts without the pin are and because a store has to be
-constructible without a board attached.
-
-Reading both sections closely produced one small result worth recording: the two
-configurations describe the rotation differently and rotate by the same amount.
-In little endian the addressed byte ends up in bits 0 to 7, in big endian at 31
-to 24 or 15 to 8 depending on the offset, and in both cases the word is rotated
-right by eight times the offset.
-
 ### The AC parameters are preliminary data and the datasheet says so
 
 Chapter 12 opens by calling its own figures preliminary data subject to change
@@ -142,6 +125,29 @@ carried across, because the bus it describes is not that part's bus.
 The ARM60 datasheet names it twice, once in the list of parts without selectable
 endianness and once in the list of parts supporting the early abort mechanism.
 Nothing else about it has been found.
+
+## Where the question is a scope boundary, not an unknown
+
+### Which way round the bigend pin is tied
+
+The pin is an input and a board ties it, so the part has no default and the
+datasheet names none. It matters more than it sounds: an unaligned word load, a
+byte load and a byte store all get separate treatment in the two configurations,
+each with its own section.
+
+Both are modelled and either can be asked for. The default is little endian,
+because that is what the parts without the pin are and because a store has to be
+constructible without a board attached.
+
+Reading both sections closely produced one small result worth recording: the two
+configurations describe the rotation differently and rotate by the same amount.
+In little endian the addressed byte ends up in bits 0 to 7, in big endian at 31
+to 24 or 15 to 8 depending on the offset, and in both cases the word is rotated
+right by eight times the offset.
+
+So this is listed as a boundary rather than a gap: nothing about the part is
+unknown here, and a reader who found it under the document's open questions
+would reasonably think something was.
 
 ## What is deliberately not modelled
 
