@@ -1,12 +1,3 @@
-"""That a part can be stopped between any two cycles, not only between instructions.
-
-`step` runs a whole instruction because that is the unit a program is written in.
-A board has no such unit: it has a clock, and between two edges of it a memory
-system can change what a read will answer. Reaching that needs the part suspended
-part way through an instruction, which is what this class is for and what makes
-it much slower than `step`.
-"""
-
 from __future__ import annotations
 
 import sys

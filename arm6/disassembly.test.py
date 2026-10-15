@@ -1,13 +1,3 @@
-"""That a word read rather than run comes back as the instruction it is.
-
-The package could already say which of Figure 28's eleven rows a word belongs to,
-and that is all it could say. Walking an image with it meant writing a second
-decoder outside the package, which is how a member ends up with two decoders that
-disagree. These checks hold the one inside it to the same shape every other
-member of this family publishes: an instruction that knows where it was found,
-what it is, and how a reader would write it.
-"""
-
 from __future__ import annotations
 
 import sys
@@ -115,11 +105,6 @@ class DataProcessingTest(Fixture):
         self.assertEqual(found.text, "mov R0, R0")
 
     def test_a_shift_of_zero_that_means_thirty_two_says_thirty_two(self) -> None:
-        """The datasheet gives a zero amount on LSR and ASR the meaning 32.
-
-        Only LSL keeps zero meaning zero, which is why it is the one written
-        without a shift at all.
-        """
         found = self.only(0xE1A00020)
 
         self.assertEqual(found.text, "mov R0, R0, lsr #32")
@@ -324,19 +309,12 @@ class OutsideTheFigureTest(Fixture):
         )
 
     def test_an_encoding_outside_the_figure_is_shown_rather_than_refused(self) -> None:
-        """A walk over an image crosses data, and data is not an instruction.
-
-        Refusing here would stop the walk at the first constant. The word is
-        handed back under the name the package already uses for it.
-        """
         found = self.only(0x000000D0)
 
         self.assertEqual((found.kind, found.mnemonic), (decode.UNSPECIFIED, "unspecified"))
 
 
 class ConditionSpellingTest(Fixture):
-    """Where the condition goes, which assembly does not always put at the end."""
-
     def test_a_condition_follows_the_operation_rather_than_the_suffix(self) -> None:
         found = self.only(0x15DB0020)
 
@@ -406,8 +384,6 @@ class ReturnTest(Fixture):
 
 
 class AgainstTheDatasheetTest(unittest.TestCase):
-    """Words taken from the datasheet's own examples, read back as it writes them."""
-
     def test_every_condition_the_datasheet_numbers_renders(self) -> None:
         rendered = [
             disassembly.decode(image((code << 28) | 0x0A000000)).text.split()[0]

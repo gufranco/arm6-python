@@ -1,16 +1,3 @@
-"""That the corpus reader reads, the filter filters, and both fail when they should.
-
-The corpus is not carried here: it is nearly a gigabyte and it belongs to its own
-project. So every check in this file works from a case built in memory rather
-than from the files, and the run against the real thing is a step of its own that
-reports how many cases it read.
-
-The filter is the part worth checking hardest. Every entry in it removes cases
-from a comparison, which is the one kind of change that can only ever make a run
-look better, so each one is driven against a case built to trip it and against a
-case built not to.
-"""
-
 from __future__ import annotations
 
 import struct
@@ -28,7 +15,6 @@ STATE = 40
 
 
 def state() -> list[int]:
-    """One state block, mostly zeros, in a privileged mode."""
     held = [0] * STATE
     held[singlestep.CPSR] = 0x000000D3
     return held
@@ -376,13 +362,6 @@ class ThePinTest(unittest.TestCase):
 
 
 class SweepingADirectoryTest(unittest.TestCase):
-    """The whole run, over a corpus built here rather than fetched.
-
-    A sweep is where the counting happens, and a count is what separates coverage
-    from silence, so it is driven over a directory whose contents are known: one
-    file the filter keeps and one it drops whole.
-    """
-
     def corpus(self, where: Path, name: str, opcodes: list[int]) -> None:
         records = b""
         for opcode in opcodes:
@@ -559,12 +538,6 @@ class ReadingABankedRegisterTest(unittest.TestCase):
 
 
 class EveryRestrictionIsDrivenTest(unittest.TestCase):
-    """Each entry of the filter, against a case built to trip it.
-
-    An exclusion can only ever make a run look better, so every one of them is
-    driven here rather than trusted.
-    """
-
     def trips(self, opcode: int, stem: str, **named: int) -> str | None:
         return singlestep.excluded(case(opcode, **named), stem)
 
@@ -728,8 +701,6 @@ class ComparingTheBanksTest(unittest.TestCase):
 
 
 class TheRemainingBranchesTest(unittest.TestCase):
-    """The paths a passing run never takes, driven once so each has run."""
-
     def test_a_case_a_user_mode_can_legitimately_run_is_kept(self) -> None:
         initial = state()
         initial[singlestep.CPSR] = 0x00000010

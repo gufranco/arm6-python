@@ -1,15 +1,3 @@
-"""That the doctor reports what is here rather than what ought to be.
-
-A skip and a pass print the same thing, which is the whole reason this exists. A
-reader who fetched no documents gets a green test run and reads it as
-confirmation, when what it confirms is that the checks ran over what was there,
-which was nothing.
-
-So every check below is driven against something broken as well as against
-something whole, because the branch that reports a fault runs only when there is
-one and is therefore the branch least likely to have run.
-"""
-
 from __future__ import annotations
 
 import sys

@@ -1,35 +1,3 @@
-"""How fast the model runs, and a floor it must not fall through.
-
-Not a benchmark for its own sake. A model of a processor is only useful if it can
-be driven for long enough to be interesting, and the way that stops being true is
-gradual: a helper grows an allocation, a property becomes a lookup, and a year
-later nothing can be swept. A floor that fails loudly is cheaper than noticing.
-
-The floor is deliberately far below what the model does today. It is there to
-catch something several times slower, not to police the noise between one runner
-and another, because a shared runner's variance is larger than any change worth
-arguing about.
-
-Every figure is a median across repeats rather than a mean, because one scheduling
-hiccup moves a mean and moves a median much less, and the runtime version is
-printed beside it because it is the single thing that changes these numbers most.
-
-The rate is reported in cycles per second rather than instructions per second,
-because this part does not take one cycle per instruction and the thing a host
-paces against is the cycle. The comparison against the silicon is drawn against a
-provisional figure and says so: chapter 12 of the datasheet opens by calling its
-AC parameters preliminary, and the clock rate below is derived from them.
-
-The floor is checked here and never from inside the test suite, because the suite
-runs under a coverage tracer and the tracer costs about ten times what the model
-does. A throughput assertion in that environment measures the tracer. So the tests
-beside this file check the measuring, with a clock they control, and the
-measurement itself is a step of its own.
-
-Usage:
-    python3 -m conformance.speed [--repeats N] [--cycles N]
-"""
-
 from __future__ import annotations
 
 import statistics
@@ -47,42 +15,26 @@ if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Callable, Sequence
 
 CYCLES = 200_000
-"""How many cycles one repeat runs. Long enough to swamp the setup."""
 
 REPEATS = 7
-"""How many repeats a median is taken over. Odd, so the median is a measurement."""
 
-FLOOR = 50_000
-"""Cycles per second the model must beat, uninstrumented.
+SHARED_RUNNER_RATE = 150_445
 
-Two measurements set this rather than one, because the first was nearly wrong.
-On the machine it was written on the model managed 387,727 cycles per second on
-Python 3.14; on a shared runner it managed 150,445. A floor picked from the local
-figure alone sat only one and a half times under the runner, which is inside the
-noise of a machine somebody else is also using, and it would have failed on a bad
-minute rather than on a regression.
+RUNNER_HEADROOM = 3
 
-So the floor is taken from the slower of the two and sits three times under it.
-That leaves room for a runner having a bad minute and none for a change that made
-the model several times slower.
-"""
+FLOOR_STEP = 10_000
 
-PART_HERTZ = 20_000_000
-"""The rate the datasheet's own AC parameters imply, and a provisional one.
+FLOOR = SHARED_RUNNER_RATE // RUNNER_HEADROOM // FLOOR_STEP * FLOOR_STEP
 
-Chapter 12 gives `Tckl` and `Tckh` a minimum of 25 ns each, so the shortest `mclk`
-period this grade allows is 50 ns and the part tops out near 20 MHz. That chapter
-opens by calling its figures preliminary data subject to change when device
-characterisation is complete, so the ratio below is a comparison against a
-provisional number and is printed as one.
-"""
+PRELIMINARY_TCKL_MIN_NS = 25
+
+PRELIMINARY_TCKH_MIN_NS = 25
+
+NANOSECONDS_PER_SECOND = 1_000_000_000
+
+PART_HERTZ = NANOSECONDS_PER_SECOND // (PRELIMINARY_TCKL_MIN_NS + PRELIMINARY_TCKH_MIN_NS)
 
 EXERCISE = 0xE1A00001
-"""`MOV R0, R1`, which costs one sequential cycle and touches nothing else.
-
-A field of one instruction is what a throughput floor wants: it measures the
-model rather than whichever mix of instructions a program happened to contain.
-"""
 
 
 class Usage(Exception):
@@ -90,8 +42,6 @@ class Usage(Exception):
 
 
 class Timed:
-    """What a run measured."""
-
     def __init__(self, part: str, cycles: int, seconds: Sequence[float]) -> None:
         self.part = part
         self.cycles = cycles
@@ -103,12 +53,10 @@ class Timed:
 
     @property
     def rate(self) -> float:
-        """Cycles per second, at the median."""
         return self.cycles / self.median
 
     @property
     def of_real_time(self) -> float:
-        """What fraction of the silicon's own rate this manages."""
         return self.rate / PART_HERTZ
 
     def beats(self, floor: int) -> bool:
@@ -124,14 +72,6 @@ def _clock() -> float:  # pragma: no cover
 
 
 def build(part: str = "arm60") -> Cpu:
-    """A part reset onto a field of one instruction, with nothing else in the way.
-
-    Reset rather than a poke at the counter, because that is how a board gets a
-    part to address zero and because a harness that reaches into the register
-    file teaches the wrong thing to whoever reads it next. The five cycles it
-    costs are paid once per repeat and are swamped by the two hundred thousand
-    that follow.
-    """
     image = EXERCISE.to_bytes(4, "little") * 4096
     held: Cpu = Cpu(part, Memory(image=image, fill=0), fill=0).reset()
     return held
@@ -143,7 +83,6 @@ def timed(
     repeats: int = REPEATS,
     clock: Callable[[], float] = _clock,
 ) -> Timed:
-    """Run that many cycles that many times, from a fresh part each repeat."""
     seconds = []
     for _ in range(repeats):
         held = build(part)
@@ -154,7 +93,6 @@ def timed(
 
 
 def lines_for(found: Timed, floor: int = FLOOR) -> list[str]:
-    """What was measured, with the numbers a reader needs to judge it."""
     said = [
         f"  {found.part}: {found.rate:,.0f} cycles per second at the median"
         f" of {len(found.seconds)} runs of {found.cycles:,}",
@@ -173,7 +111,6 @@ def lines_for(found: Timed, floor: int = FLOOR) -> list[str]:
 
 
 def options(argv: Sequence[str]) -> tuple[int, int]:
-    """How many cycles and how many repeats, from the command line."""
     cycles = CYCLES
     repeats = REPEATS
     rest = list(argv)

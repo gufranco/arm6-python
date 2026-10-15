@@ -1,10 +1,3 @@
-"""That the link survey reads the readme correctly and judges an answer honestly.
-
-Nothing here touches the network. A watcher that only worked against live hosts
-could not be tested at all, and the judgement it makes, which refusals mean a
-dead link and which mean weather, is the part worth pinning.
-"""
-
 import contextlib
 import io
 import json
@@ -67,8 +60,6 @@ def head_refuses_get_answers() -> Any:
 
 
 class ReadingTest(unittest.TestCase):
-    """What the survey takes from the readme."""
-
     def test_it_finds_the_addresses_in_a_line(self) -> None:
         found = links.addresses("see https://example.com/a and <https://example.com/b>")
 
@@ -103,12 +94,6 @@ class ReadingTest(unittest.TestCase):
         self.assertGreater(len(links.addresses()), 5)
 
     def test_and_every_document_the_references_pin_is_one_of_them(self) -> None:
-        """The rows this survey exists for.
-
-        A count is arbitrary and drifts with the badges. What matters is that
-        every document a claim rests on is an address somebody will be told
-        about when it stops answering.
-        """
         import json
 
         record = json.loads((ROOT / "conformance" / "hardware.json").read_text())
@@ -129,8 +114,6 @@ class ReadingTest(unittest.TestCase):
 
 
 class JudgementTest(unittest.TestCase):
-    """Which answers count as a broken link and which do not."""
-
     def test_an_address_that_answers_is_fine(self) -> None:
         found = links.probe("https://example.com/a", answering(200))
 
@@ -173,8 +156,6 @@ class JudgementTest(unittest.TestCase):
 
 
 class ReportTest(unittest.TestCase):
-    """The shape the workflow reads."""
-
     @override
     def setUp(self) -> None:
         self.answers = [
@@ -210,8 +191,6 @@ class ReportTest(unittest.TestCase):
 
 
 class SurveyTest(unittest.TestCase):
-    """Driving the whole thing without a network."""
-
     def test_it_asks_every_address_it_is_given(self) -> None:
         found = links.survey(["https://a.example", "https://b.example"], answering(200))
 
@@ -234,8 +213,6 @@ class SurveyTest(unittest.TestCase):
 
 
 class ExitTest(unittest.TestCase):
-    """What the command line says to a workflow."""
-
     def run_with(self, answers: list[links.Answer]) -> tuple[int, str]:
         original, printed = links.survey, io.StringIO()
         links.survey = lambda *rest, **named: answers

@@ -60,13 +60,6 @@ class ManifestTest(unittest.TestCase):
         self.assertLessEqual(rungs, {1, 3, 4})
 
     def test_the_ladder_says_why_the_two_empty_rungs_are_empty(self) -> None:
-        """Two rungs here have nothing on them, and neither may pass without saying so.
-
-        A ladder that lists a rung and leaves it blank reads as a rung nobody
-        needed. Rung two is a measurement off real silicon and rung three is a
-        simulation of the die, and both are empty because neither exists for this
-        part rather than because neither would settle anything.
-        """
         said = HELD["authority"]["2"] + HELD["authority"]["3"]
 
         self.assertIn("Empty here", said)
@@ -271,13 +264,6 @@ class EntryTest(unittest.TestCase):
 
 @unittest.skipUnless(PRESENT, "the documents are not on this machine")
 class OnDiskTest(unittest.TestCase):  # pragma: no cover
-    """The documents this machine actually holds, if it holds any.
-
-    Outside the coverage gate, and the only thing here that is. A check whose
-    subject is a file the repository does not carry runs on one machine and not
-    another, so the gate would measure which machine ran it rather than the code.
-    """
-
     def test_every_document_on_disk_is_the_one_that_was_read(self) -> None:
         self.assertEqual(documents.main(["--check"], ROOT / "docs"), 0)
 

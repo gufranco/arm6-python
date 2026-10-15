@@ -1,13 +1,3 @@
-"""That a recorded cycle carries what chapter 10's tables print in that row.
-
-The header of chapter 10 states which of the columns are pipelined and by how
-much: `Nmreq` and `seq` appear up to one cycle ahead of the cycle they apply to,
-so they forecast the next one, while the address, `Nbw`, `Nrw` and `Nopc` appear
-up to half a cycle ahead and describe the cycle they are printed in. A record
-that flattened those into one column would lose the only thing the memory system
-uses to decide whether it can run a page mode access.
-"""
-
 from __future__ import annotations
 
 import sys

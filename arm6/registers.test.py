@@ -1,15 +1,3 @@
-"""That thirty seven registers bank the way the programmer's model banks them.
-
-ARM60 page 10 states the count outright: thirty one general purpose registers and
-six status registers. Page 1 of the same document says twenty seven, which is the
-earlier part's number carried into the text when it was adapted, and the block
-diagram on page 2 agrees with page 10 rather than with page 1.
-
-FIQ banks seven registers and every other privileged mode banks two. The four
-26-bit modes share their banks with the 32-bit modes of the same name, which is
-Application Note 11 rather than the datasheet.
-"""
-
 from __future__ import annotations
 
 import sys

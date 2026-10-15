@@ -1,15 +1,3 @@
-"""That a cycle tally counts in the manufacturer's own terms and converts in nobody's.
-
-ARM60 Table 3 gives four cycle types, decided by `Nmreq` and `seq`, and Table 20
-states every instruction's cost in those terms rather than in ticks. Section 8.6
-then says the clock may be stretched without limit and that `Nwait` may insert
-whole `mclk` cycles, which makes the number of ticks a cycle takes a fact about
-the board rather than about the part.
-
-So the tally counts S, N, I and C, and refuses to become a tick count until a
-caller says what their own memory system costs.
-"""
-
 from __future__ import annotations
 
 import sys

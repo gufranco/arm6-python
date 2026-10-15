@@ -1,12 +1,3 @@
-"""That the pieces the transfer instructions are built from match the pages.
-
-The instructions themselves are checked against the cycle tables in
-`conformance/`, where a whole part can be driven. What is checked here is the
-arithmetic underneath them: the sign extension a branch offset gets, the order a
-register list is transferred in, and the rotation an unaligned word load applies,
-all of which are stated in the datasheet and none of which needs a part to test.
-"""
-
 from __future__ import annotations
 
 import sys
@@ -137,13 +128,6 @@ class WhatARegisterStoreOfTheCounterHoldsTest(unittest.TestCase):
 
 
 class DrivenAsWholeInstructionsTest(unittest.TestCase):
-    """The transfer forms whose behaviour needs a whole part to show.
-
-    A register offset, a byte access, a load into the counter, a block transfer
-    through the user bank and a coprocessor instruction with nothing attached all
-    reach past the arithmetic above.
-    """
-
     def part(self, *words: int) -> Cpu:
         image = b"".join(one.to_bytes(4, "little") for one in words)
         held = Cpu("arm60", Memory(image=image, fill=0), fill=0)

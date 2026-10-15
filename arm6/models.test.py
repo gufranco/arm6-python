@@ -1,12 +1,3 @@
-"""That the catalogue is published even though it holds one part today.
-
-A member covering one part is the tempting exception to the family's rule that
-every part publishes a catalogue, and it is the worst one: a caller who learns to
-leave the model out here writes the same call against a member covering sixteen
-and gets a part nobody picked. So the model is required, there is no default, and
-a name no model answers to is refused with every model there is listed.
-"""
-
 from __future__ import annotations
 
 import sys

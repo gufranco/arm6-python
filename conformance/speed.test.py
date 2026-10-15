@@ -1,12 +1,3 @@
-"""That the measuring measures, driven by a clock the test controls.
-
-The floor itself is not asserted here. This file runs under a coverage tracer,
-and the tracer costs about ten times what the model does, so a throughput
-assertion in this environment measures the tracer rather than the model. What is
-checked here is the arithmetic, the reporting and the exit codes, with a fake
-clock so the numbers are known rather than measured.
-"""
-
 from __future__ import annotations
 
 import sys
@@ -21,7 +12,6 @@ from conformance import speed  # noqa: E402
 
 
 def ticking(*seconds: float) -> Callable[[], float]:
-    """A clock that hands out a fixed sequence, so a rate is arithmetic."""
     marks = iter(seconds)
 
     def clock() -> float:

@@ -1,18 +1,3 @@
-"""What ARM60 drives on its pins, one cycle at a time, with the pipelining kept.
-
-Table 3 gives four cycle types and the two pins that name them. `Nmreq` and `seq`
-are generated while `mclk` is LOW in the cycle *before* the one whose
-characteristics they forecast, which the datasheet says is what gives the memory
-system time to decide whether it can use a page mode access. The address, `Nbw`,
-`Nrw` and `Nopc` appear up to half a cycle ahead and describe the cycle they are
-printed in.
-
-So one record here is one row of a chapter 10 table: the access that row performs
-and, separately, the type that row forecasts. Table 20 counts the forecasts, and
-that is checked rather than asserted: adding up the forecasts of every row in
-every table reproduces Table 20's figures for all eleven forms.
-"""
-
 from __future__ import annotations
 
 from typing import override
@@ -21,8 +6,6 @@ from arm6.tally import Cycles
 
 
 class CycleType:
-    """One of the four combinations of `Nmreq` and `seq` that Table 3 names."""
-
     __slots__ = ("letter", "name", "nmreq", "seq")
 
     letter: str
@@ -42,13 +25,6 @@ class CycleType:
 
     @property
     def touches_memory(self) -> bool:
-        """Whether the cycle asks the memory system for anything.
-
-        `Nmreq` LOW is the request. An internal cycle and a coprocessor register
-        transfer both leave it HIGH, which is why neither can be aborted and why
-        the datasheet says an internal cycle can be merged with the sequential
-        access that follows it.
-        """
         return self.nmreq == 0
 
     @override
@@ -65,14 +41,6 @@ TYPES = (NONSEQUENTIAL, SEQUENTIAL, INTERNAL, COPROCESSOR)
 
 
 class Cycle:
-    """One row of a chapter 10 table.
-
-    `kind` is the type this row forecasts, which is the one Table 20 counts
-    against the instruction. The address and the three half-cycle-ahead pins
-    describe the access the row itself performs, which is a different cycle, and
-    keeping the two apart is the whole reason this class is not a single integer.
-    """
-
     __slots__ = ("address", "data", "kind", "lock", "nbw", "nopc", "nrw", "ntrans")
 
     kind: CycleType
@@ -110,13 +78,6 @@ class Cycle:
 
 
 class Recorder:
-    """The cycles one instruction drove, kept so a caller can read the bus.
-
-    A count is not a comparison: a model can spend the right number of cycles
-    driving the wrong addresses. Keeping the rows is what lets a check compare
-    against the table rather than against the total.
-    """
-
     __slots__ = ("cycles",)
 
     cycles: list[Cycle]
@@ -132,7 +93,6 @@ class Recorder:
         self.cycles = []
 
     def spent(self) -> Cycles:
-        """What the rows add up to, in the four types Table 20 states costs in."""
         counted = {one.letter: 0 for one in TYPES}
         for one in self.cycles:
             counted[one.kind.letter] += 1

@@ -1,23 +1,3 @@
-"""Everything that moves a word: branches, loads, stores, swaps and traps.
-
-Two of the rules here are easy to state and easy to get one word wrong.
-
-Whenever R15 is stored to memory the stored value is the address of the
-instruction plus twelve, not plus eight. The datasheet says so twice, once for
-STR and once for STM, and it is the one place the prefetch offset is twelve
-without a register-specified shift being involved.
-
-An unaligned word load does not fault and does not truncate. The word is fetched
-from the aligned address and then rotated so that the addressed byte occupies
-bits 0 to 7, which means a load from an address ending in one returns all four
-bytes in a different order rather than three bytes and a gap.
-
-The coprocessor rows share one executor because, with no coprocessor attached,
-they share one outcome. Section 10.15 says a coprocessor which cannot perform an
-instruction must leave `cpa` and `cpb` HIGH and that this causes the undefined
-instruction trap to be taken. Nothing is attached here, so all three rows take it.
-"""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -35,47 +15,21 @@ WORD_MASK = 0xFFFFFFFF
 PREFETCH = 8
 
 STORED_COUNTER_OFFSET = 12
-"""What a store of R15 puts in memory: the instruction's address plus twelve."""
 
 
 class EmptyRegisterList(Arm6Error):
-    """An LDM or STM naming no registers, which the datasheet forbids.
-
-    Section 7.9 states one restriction and this is it: the register list should
-    not be empty. What the silicon does with an empty one is not stated, so this
-    refuses rather than choosing. The published corpus carries five such cases and
-    they are filtered out for the same reason: both parts leave it undefined, so
-    agreeing about it would prove nothing.
-    """
-
     __slots__ = ()
 
 
 class NoCoprocessor(Arm6Error):
-    """Reserved for a board that attaches one, which this package does not model."""
-
     __slots__ = ()
 
 
 class UnspecifiedEncoding(Arm6Error):
-    """An encoding the datasheet says does not trap and does not describe.
-
-    The note beneath Figure 28 gives a multiply with bit 5 or bit 6 set as the
-    example and says such codes shall not be used because their action may change.
-    Application Note 11 says the behaviour is the ARM2aS macrocell's, and the data
-    book describing that macrocell is not pinned here. So this refuses rather than
-    inventing an answer, and the refusal says which encoding it was.
-    """
-
     __slots__ = ()
 
 
 def branch_target(pc: int, word: int) -> int:
-    """Where a branch goes: the offset, shifted, sign extended, added to `pc+8`.
-
-    The offset takes account of the prefetch, which is why the base is the
-    instruction's address plus two words rather than the address itself.
-    """
     offset = word & 0x00FFFFFF
     if offset & 0x00800000:
         offset -= 0x01000000
@@ -83,18 +37,10 @@ def branch_target(pc: int, word: int) -> int:
 
 
 def registers_in(mask: int) -> tuple[int, ...]:
-    """The registers a block transfer names, lowest first.
-
-    The order is the hardware's rather than a convenience: registers are
-    transferred lowest to highest with the lowest going to the lowest address,
-    and R15 is always last, which is what makes an aborted LDM leave the counter
-    intact.
-    """
     return tuple(one for one in range(16) if mask >> one & 1)
 
 
 def rotate_load(value: int, address: int) -> int:
-    """An unaligned word load, rotated so the addressed byte is at the bottom."""
     turn = (address & 0b11) * 8
     if turn == 0:
         return value & WORD_MASK
@@ -110,7 +56,6 @@ def stored_counter(pc: int) -> int:
 
 
 def branch(cpu: Cpu, word: int) -> None:
-    """Table 4, in three cycles, whether or not the link bit is set."""
     target = branch_target(cpu.registers.pc, word)
     cpu.prefetch(NONSEQUENTIAL, cpu.registers.pc + PREFETCH)
     if word & 1 << 24:
@@ -133,17 +78,6 @@ def _transfer_offset(cpu: Cpu, word: int) -> int:
 
 
 def single_transfer(cpu: Cpu, word: int) -> None:
-    """Tables 7 and 8: one word or one byte, with the base optionally written back.
-
-    The order of the two writes is the datasheet's rather than a choice. Section
-    10.4: the data is fetched during the second cycle and the base modification is
-    performed during that cycle, and during the third cycle the data is
-    transferred to the destination register. So when the destination and the base
-    are the same register the loaded value wins, because it is written a cycle
-    later. Section 10.5 gives the mirror case for a store: the base modification
-    and the write to memory happen in the same cycle, so a store of its own base
-    puts the unmodified value out.
-    """
     pre = bool(word & 1 << 24)
     up = bool(word & 1 << 23)
     byte = bool(word & 1 << 22)
@@ -203,7 +137,6 @@ def _load_register(cpu: Cpu, word: int, address: int, destination: int, byte: bo
 
 
 def block_transfer(cpu: Cpu, word: int) -> None:
-    """Tables 9 and 10: any subset of the registers, lowest to lowest address."""
     pre = bool(word & 1 << 24)
     up = bool(word & 1 << 23)
     force_user = bool(word & 1 << 22)
@@ -236,12 +169,6 @@ def block_transfer(cpu: Cpu, word: int) -> None:
 
 
 def _bank(cpu: Cpu, index: int, force_user: bool, value: int | None = None) -> int:
-    """Read or write a register, optionally through the user bank.
-
-    The S bit on a block transfer without R15 in the list makes the transfer use
-    the user mode registers rather than the current mode's, which is what lets a
-    privileged mode save a user process's state.
-    """
     if not force_user or index < 8:
         if value is None:
             return cpu.registers.read(index)
@@ -288,15 +215,6 @@ def _store_many(
     base_index: int,
     written: int | None,
 ) -> None:
-    """Store each register named, with the base a special case the datasheet states.
-
-    Section 7.7.6: the base is written back at the end of the second cycle, and
-    the first register is written out at the start of it. So a store that
-    includes the base stores the unchanged value when the base is first in the
-    transfer order and the modified value when it is second or later. The order
-    is by register number rather than by anything the instruction chooses, so
-    which of the two applies follows from the list alone.
-    """
     last = len(listed) - 1
     for place, (index, address) in enumerate(zip(listed, addresses, strict=True)):
         if index == 15:
@@ -311,7 +229,6 @@ def _store_many(
 
 
 def swap(cpu: Cpu, word: int) -> None:
-    """Table 11: a read and a write locked together, with `lock` HIGH between them."""
     byte = bool(word & 1 << 22)
     base = cpu.registers.read(word >> 16 & 0xF)
     destination = word >> 12 & 0xF
@@ -331,35 +248,19 @@ def swap(cpu: Cpu, word: int) -> None:
 
 
 def software_interrupt(cpu: Cpu, word: int) -> None:
-    """Table 12: the return address is the SWI's own address plus four."""
     cpu.take("software interrupt", "svc32", cpu.registers.pc + 4)
 
 
 def undefined(cpu: Cpu, word: int) -> None:
-    """Table 18: one internal cycle offering the instruction, then the trap.
-
-    The first cycle is the coprocessor handshake. `Ncpi` goes LOW, no coprocessor
-    drives `cpa` or `cpb` LOW, and the trap follows, which is why the undefined
-    instruction costs one cycle more than an exception entry does.
-    """
     cpu.spend(INTERNAL, cpu.registers.pc + PREFETCH, nopc=0)
     cpu.take("undefined", "und32", cpu.registers.pc + 4)
 
 
 def coprocessor(cpu: Cpu, word: int) -> None:
-    """All three coprocessor rows, with none attached.
-
-    Section 10.15: a coprocessor which cannot perform an instruction must not
-    drive `cpa` or `cpb` LOW, and they remain HIGH, causing the undefined
-    instruction trap to be taken. That is what an absent coprocessor looks like
-    on this bus, so the outcome is the same as an undefined instruction rather
-    than a special case.
-    """
     undefined(cpu, word)
 
 
 def unspecified(cpu: Cpu, word: int) -> None:
-    """An encoding outside Figure 28 that the datasheet says does not trap."""
     raise UnspecifiedEncoding(
         f"0x{word:08X} matches no row of Figure 28. The note beneath that figure says "
         "such codes do not take the undefined instruction trap and does not say what "

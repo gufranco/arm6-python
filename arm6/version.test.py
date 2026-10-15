@@ -1,5 +1,3 @@
-"""That the package publishes a version and builds a part the family way."""
-
 from __future__ import annotations
 
 import sys

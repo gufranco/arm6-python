@@ -1,37 +1,3 @@
-"""Look for every sentence the record calls a quote in the document it names.
-
-A record that quotes a document makes a checkable claim, and until something
-checks it the sentence is a comment: free to drift, and read as evidence while it
-does.
-
-This member needs more machinery than its siblings to do the same job, and the
-reason is worth stating rather than discovering. The ARM60 datasheet carries no
-text layer at all. Asking `pdftotext` for its contents returns one newline per
-page, eighty three characters for eighty three pages. Every other member in this
-family reads a document that way, so ported unchanged the checker here would find
-nothing, report nothing missing, and exit zero over a document it had not read.
-
-So a page with no text layer is rendered and recognised instead, and the result
-is cached beside the document. That makes the check real at the cost of two
-external tools, and the doctor reports whether this machine has them.
-
-Matching is deliberately loose. A recogniser misreads perhaps a word in twenty,
-so a quote is scored on how many of its five-word windows appear rather than on
-an exact search. That survives a misread word and a line break in the middle of
-one, and still fails a sentence that was never printed.
-
-The page matters as much as the sentence. Searching the whole document answers
-"did somebody print this", not "did the page this record cites print it", and
-those come apart exactly when a fact is filed against the wrong source.
-
-The documents are not in this repository and never will be: none is
-redistributable. So a run with none on disk checks nothing and says so, rather
-than passing quietly.
-
-Usage:
-    python3 -m conformance.quotes
-"""
-
 from __future__ import annotations
 
 import hashlib
@@ -49,33 +15,17 @@ ROOT = Path(__file__).resolve().parent.parent
 DOCUMENTS = ROOT / "docs" / "manufacturer"
 
 CACHE = DOCUMENTS / ".recognised"
-"""Where a recognised page is kept, keyed by the document's digest and the page.
-
-Beside the documents rather than in the repository, because it is derived from
-something the repository is not allowed to carry and belongs on the same machine.
-"""
 
 RECORDS = ROOT / "conformance"
 
 WINDOW = 5
-"""Words per window. Short enough to survive a misread word, long enough that
-matching one is not a coincidence."""
 
 BAR = 0.4
-"""The share of windows a quote must place to count as found.
-
-A recogniser misreads perhaps a word in twenty, and a quote of thirty words has
-twenty-six windows, so a passing quote usually places most of them. The bar sits
-low because the question is whether the sentence is on the page at all, not
-whether the recogniser read it well.
-"""
 
 RENDER_DPI = "300"
 
 
 class Claim(NamedTuple):
-    """One passage the record attributes to a page of a document."""
-
     where: str
     quote: str
     document: str
@@ -83,8 +33,6 @@ class Claim(NamedTuple):
 
 
 class Verdict(NamedTuple):
-    """One claim, and the best the page it names could do with it."""
-
     where: str
     quote: str
     document: str
@@ -98,7 +46,6 @@ class Verdict(NamedTuple):
 
     @property
     def unchecked(self) -> bool:
-        """True when there was nothing to check against, which is not a failure."""
         return self.windows == 0
 
     @override
@@ -107,13 +54,6 @@ class Verdict(NamedTuple):
 
 
 def flatten(text: str) -> str:
-    """Everything that is not a letter or a digit, gone, and the rest lowercased.
-
-    That survives hyphenation across a line break, collapsed spaces and
-    inconsistent punctuation. It does not survive a homoglyph or a misread digit,
-    so a quote that fails to match is a quote to read on the page rather than one
-    to delete.
-    """
     return re.sub(r"[^a-z0-9]", "", text.lower())
 
 
@@ -125,31 +65,16 @@ def windows(quote: str) -> list[str]:
 
 
 def placed(quote: str, body: str) -> tuple[int, int]:
-    """How many of a quote's windows the body carries, and how many there were.
-
-    The body is flattened here rather than by the caller, so a caller cannot get
-    a false miss by handing over text that had not been through it.
-    """
     made = windows(quote)
     flat = flatten(body)
     return sum(1 for one in made if one in flat), len(made)
 
 
 def _shell(command: Sequence[str], **options: Any) -> subprocess.CompletedProcess[str]:
-    """The real shell, with the same signature the injected stand-ins have.
-
-    Marked no-cover because running it would run the external tools, which is
-    what the check itself does and not what a test of the check should do.
-    """
     return subprocess.run(command, **options)  # noqa: PLW1510  # pragma: no cover
 
 
 def text_layer(path: Path, page: int, run: Callable[..., Any] | None = None) -> str:
-    """What the document's own text layer says about one page, if it has one.
-
-    A machine without the reader is the same case as a machine without the
-    document: nothing to check against, reported rather than thrown.
-    """
     runner = _shell if run is None else run
     try:
         done = runner(
@@ -164,16 +89,6 @@ def text_layer(path: Path, page: int, run: Callable[..., Any] | None = None) -> 
 
 
 def _recognise(path: Path, page: int, run: Callable[..., Any], cache: Path) -> str:
-    """Render one page and read it, which is the only way into this document.
-
-    `-singlefile` is not a tidiness choice. Without it `pdftoppm` names its output
-    after the page and zero-pads the number to the width of the document's page
-    count, so page 4 of an eighty three page document lands in `page-04.png` and a
-    reader looking for `page-4.png` finds nothing. That failure is silent: the
-    page reads as empty, every quotation cited to it is reported as unchecked
-    rather than as missing, and the run still exits zero. It cost nine of this
-    record's fifty passages before it was found.
-    """
     made = cache / f"page-{page}"
     try:
         run(
@@ -218,12 +133,6 @@ def page_text(
     run: Callable[..., Any] | None = None,
     cache: Path | None = None,
 ) -> str:
-    """One page of a document, however that document has to be read.
-
-    A document that is not a scan is read as it stands. One that is, and that
-    carries a usable text layer, is read through it. One that carries none is
-    rendered and recognised, and the result is kept so the next run is cheap.
-    """
     runner = _shell if run is None else run
     if path.suffix.lower() != ".pdf":
         if not path.exists():
@@ -245,7 +154,6 @@ def page_text(
 
 
 def declared() -> dict[str, dict[str, Any]]:
-    """Every document the records name, keyed the way a citation names it."""
     found: dict[str, dict[str, Any]] = {}
     for path in sorted(RECORDS.glob("*.json")):
         _collect_documents(json.loads(path.read_text()), found)
@@ -267,12 +175,6 @@ def _collect_documents(node: Any, into: dict[str, dict[str, Any]]) -> None:
 
 
 def claims(node: Any, trail: str = "") -> list[Claim]:
-    """Every passage a record calls a quote, with the page it names.
-
-    Only keys ending in `quote` or `quotes` count. That is the whole rule, and it
-    is why a passage filed under any other name is a document's words that
-    nothing holds to the document.
-    """
     found: list[Claim] = []
     if isinstance(node, dict):
         document = node.get("document")
@@ -297,7 +199,6 @@ def claims(node: Any, trail: str = "") -> list[Claim]:
 
 
 def loaded() -> list[Claim]:
-    """Every claim in every record here."""
     found: list[Claim] = []
     for path in sorted(RECORDS.glob("*.json")):
         found.extend(claims(json.loads(path.read_text()), path.stem))
@@ -305,17 +206,6 @@ def loaded() -> list[Claim]:
 
 
 def readable(sources: dict[str, dict[str, Any]], where: Path | None = None) -> int:
-    """How many of the declared documents are on this machine.
-
-    A count rather than a boolean, because the report has to be able to say that
-    it looked at three documents and found none, which is a different sentence
-    from having looked at nothing.
-
-    The directory is an argument because a check that reads whatever happens to
-    be on the machine has a result that depends on the machine. On a runner there
-    are no documents, so a test asserting that one is present passes on a
-    developer's disk and fails everywhere else.
-    """
     at = DOCUMENTS if where is None else where
     return sum(1 for one in sources.values() if (at / str(one.get("file"))).exists())
 
@@ -325,7 +215,6 @@ def verify(
     run: Callable[..., Any] | None = None,
     cache: Path | None = None,
 ) -> tuple[list[Verdict], int]:
-    """Every claim against the page it names, and how many documents were readable."""
     sources = declared()
     pages: dict[tuple[str, int], str] = {}
     books = readable(sources)
@@ -349,7 +238,6 @@ def verify(
 
 
 def report(found: Sequence[Verdict], books: int) -> list[str]:
-    """What was examined, and when the answer is nothing, that rather than nothing."""
     checked = [one for one in found if not one.unchecked]
     lost = [one for one in checked if not one.found]
     lines = [f"  {len(found)} passages in the records, against {books} documents on this machine"]

@@ -1,14 +1,3 @@
-"""That the barrel shifter answers each of the corners the datasheet enumerates.
-
-Sections 7.3.1 and 7.3.2 spend three pages on the cases where a shift amount is
-zero or thirty two or more, because every one of them is a special case rather
-than a consequence of the general rule. The seven numbered outcomes for a
-register-specified amount of thirty two or more are quoted from page 23 and each
-one has a check of its own here, since a shifter that gets six of them right
-looks identical to one that gets all seven right until a program meets the
-seventh.
-"""
-
 from __future__ import annotations
 
 import sys

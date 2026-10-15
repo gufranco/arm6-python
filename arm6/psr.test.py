@@ -1,12 +1,3 @@
-"""That the status register is the one ARM60 draws, with ten modes and bit 5 reserved.
-
-Two facts here decide more than they look like they should. ARM60 section 7.4.2
-names bit 5 in the reserved list in prose, and on the part the published
-conformance corpus was recorded from, bit 5 is the Thumb bit. And section 5.2
-says ten modes are reachable in the 32-bit configuration while Table 1 prints
-only six, with the other four given by Application Note 11.
-"""
-
 from __future__ import annotations
 
 import sys

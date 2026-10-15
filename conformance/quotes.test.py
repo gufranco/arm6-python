@@ -1,17 +1,3 @@
-"""That the quote checker checks, and reports what it could not check.
-
-Every sentence the record attributes to a document is a claim that can be held to
-that document, and until something holds it there it is a comment: free to drift,
-and read as evidence while it does.
-
-This member's document makes that harder than usual and the checker harder to
-trust. The ARM60 datasheet carries no text layer, so the way every other member
-reads a document returns nothing here, and an absence that means nothing looks
-exactly like an absence that means everything. So the reading path is checked
-here against runners the test controls, including one that returns nothing at
-all.
-"""
-
 from __future__ import annotations
 
 import json
@@ -29,7 +15,6 @@ from conformance import quotes  # noqa: E402
 
 
 def runner(**answers: str) -> Any:
-    """A stand-in for the shell, answering by which tool was asked for."""
 
     def run(command: list[str], **_: Any) -> subprocess.CompletedProcess[str]:
         tool = Path(command[0]).name
@@ -295,15 +280,6 @@ class TheReportTest(unittest.TestCase):
 
 
 class DrivenAgainstSomethingThatShouldFailTest(unittest.TestCase):
-    """A check nobody has seen fail is not known to work.
-
-    Two failures matter and they are different. A sentence nobody printed must
-    not place. And a sentence that was printed, filed under the wrong page, must
-    not place either: that is the failure a checker which searched the whole
-    document would miss, and it is the one that happens when a fact is recorded
-    against the wrong source.
-    """
-
     def test_a_sentence_that_was_never_printed_does_not_place(self) -> None:
         body = quotes.flatten("the page says something else entirely")
 
@@ -337,8 +313,6 @@ class TheRecordIsWellFormedTest(unittest.TestCase):
 
 
 class TheWholeRunTest(unittest.TestCase):
-    """Verification end to end, against a document the test writes itself."""
-
     def test_a_claim_whose_document_is_absent_is_unchecked_rather_than_failed(self) -> None:
         held, _ = quotes.verify([quotes.Claim("where", "a sentence", "nothing", 1)], run=refusing())
 
@@ -429,8 +403,6 @@ class ReadingTheRecordsTest(unittest.TestCase):
 
 
 class TheLastFewPathsTest(unittest.TestCase):
-    """The branches a normal run never reaches, driven so they have run once."""
-
     def test_a_declared_document_that_is_absent_is_not_counted(self) -> None:
         with tempfile.TemporaryDirectory() as where:
             held = quotes.readable({"a": {"file": "no-such-document.pdf"}}, Path(where))

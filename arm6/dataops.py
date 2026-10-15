@@ -1,23 +1,3 @@
-"""The data processing row, the multiply row, and the PSR transfers hidden inside one.
-
-Three things here come straight off the page and are worth naming.
-
-The multiplier is a 2 bit Booth's algorithm with early termination, so it eats
-two bits of Rs per cycle and `m` runs to sixteen. The part the published corpus
-was recorded from eats eight bits per cycle and its `m` runs to four. Both
-terminate early; the radix is the difference, and it is the reason the corpus's
-transaction stream is a different part's bus.
-
-`MUL` with Rd equal to Rm gives a zero result and `MLA` gives a meaningless one.
-That is a stated behaviour rather than an unpredictable, which is why corpus
-cases carrying it are filtered out: ARM60 answers, and the generator's part only
-prohibits.
-
-The C flag after a multiply is set to a meaningless value, in the datasheet's own
-words. So it is derived from the seed rather than left as whatever happened to be
-there, because a value that looks stable is a value somebody will rely on.
-"""
-
 from __future__ import annotations
 
 import random
@@ -35,22 +15,13 @@ WORD_MASK = 0xFFFFFFFF
 SIGN = 0x80000000
 
 LOGICAL = frozenset({0b0000, 0b0001, 0b1000, 0b1001, 0b1100, 0b1101, 0b1110, 0b1111})
-"""AND, EOR, TST, TEQ, ORR, MOV, BIC and MVN, quoted from section 7.3.1.
-
-The classification decides the flags: a logical operation leaves V alone and
-takes C from the barrel shifter, an arithmetic one sets V on an overflow into bit
-31 and takes C from the carry out of bit 31 of the ALU.
-"""
 
 NO_RESULT = frozenset({0b1000, 0b1001, 0b1010, 0b1011})
-"""TST, TEQ, CMP and CMN, which set flags and write nothing."""
 
 MAX_BOOTH = 16
 
 
 class Outcome:
-    """What the ALU produced and which flags it is entitled to touch."""
-
     __slots__ = ("c", "n", "result", "touches_v", "v", "writes", "z")
 
     result: int
@@ -85,25 +56,10 @@ class Outcome:
 
 
 def booth_cycles(multiplier: int) -> int:
-    """`m`, from the rule Table 20 states rather than from a loop.
-
-    Multiplication by any number between `2^(2m-3)` and `2^(2m-1)-1` takes
-    `1S+mI` for `1<m<16`; by 0 or 1 it takes `1S+1I`; and by anything at or above
-    `2^29` it takes `1S+16I`. Those bands are two bits wide, which is the 2 bit
-    Booth radix showing through, so the band a value falls in follows from its
-    width alone.
-    """
     return min(MAX_BOOTH, ((multiplier & WORD_MASK).bit_length() + 2) // 2)
 
 
 def _add(first: int, second: int, carry_in: bool) -> Outcome:
-    """One 33 bit addition, which is every arithmetic operation on this part.
-
-    Subtraction is the same adder with the second operand inverted and a carry
-    in, which is why C after a subtraction is a carry rather than a borrow: the
-    datasheet says the C flag is set to the carry out of bit 31 of the ALU, and
-    that is what this produces without a second rule.
-    """
     total = first + second + int(carry_in)
     result = total & WORD_MASK
     carry = total > WORD_MASK
@@ -133,7 +89,6 @@ def _logical(result: int, carry: bool) -> Outcome:
 
 
 def alu(opcode: int, first: int, second: int, carry: bool) -> Outcome:
-    """One of the sixteen operations Table 2 lists, with the flags section 7.3.1 gives."""
     first &= WORD_MASK
     second &= WORD_MASK
     if opcode in {0b0000, 0b1000}:
@@ -174,14 +129,6 @@ def alu(opcode: int, first: int, second: int, carry: bool) -> Outcome:
 
 
 def immediate(word: int, carry: bool) -> tuple[int, bool]:
-    """The eight bit immediate, rotated right by twice the rotate field.
-
-    Section 7.3.3 gives the value and the rotate and stops there: it does not say
-    what the shifter's carry output is. The rule modelled here, that a rotate of
-    zero passes the old flag through and any other rotate takes bit 31 of the
-    result, is the corpus's rather than the document's, and it is recorded as
-    such in divergences.json.
-    """
     rotate = (word >> 8 & 0xF) * 2
     value = word & 0xFF
     if rotate == 0:
@@ -191,16 +138,10 @@ def immediate(word: int, carry: bool) -> tuple[int, bool]:
 
 
 def _meaningless_carry(cpu: Cpu, first: int, second: int) -> bool:
-    """The C flag after a multiply, which section 7.5.2 calls meaningless.
-
-    Reproducible from the seed and the operands so that a run repeats, and
-    deliberately not stable across operands so that nobody can come to rely on it.
-    """
     return bool(random.Random((cpu.seed << 8) ^ first ^ (second << 1)).getrandbits(1))
 
 
 def _operand_two(cpu: Cpu, word: int) -> tuple[int, bool, bool]:
-    """Operand 2, the shifter carry it produced, and whether a register shifted it."""
     carry = psr.flag(cpu.registers.cpsr, psr.C_BIT)
     if word & 1 << 25:
         value, out = immediate(word, carry)
@@ -218,14 +159,6 @@ def _operand_two(cpu: Cpu, word: int) -> tuple[int, bool, bool]:
 
 
 def _psr_transfer(cpu: Cpu, word: int) -> bool:
-    """MRS and MSR, which live inside the data processing row.
-
-    Application Note 11: they are formed from the TST, TEQ, CMP and CMN opcodes
-    with the S flag clear, which were previously unused. Figure 14 gives the three
-    encodings and they are matched here exactly rather than by opcode alone,
-    because an encoding in that space which matches none of them is a reserved
-    one rather than a transfer.
-    """
     if word & 0x0FBF0FFF == 0x010F0000:
         source = cpu.registers.saved() if word & 1 << 22 else cpu.registers.cpsr
         cpu.registers.write(word >> 12 & 0xF, cpu.registers.cpsr if source is None else source)
@@ -243,28 +176,9 @@ def _psr_transfer(cpu: Cpu, word: int) -> bool:
 
 
 FLAGS_MASK = 0xF0000000
-"""N, Z, C and V: the four bits the flags-only form of MSR writes.
-
-Section 7.4.3: the most significant four bits of the register contents are
-written to the N, Z, C and V flags respectively.
-"""
 
 
 def _write_psr(cpu: Cpu, word: int, value: int, whole: bool) -> None:
-    """Put a word into the CPSR or the current mode's SPSR.
-
-    Section 7.4.1: in User mode the control bits of the CPSR are protected from
-    change, so only the condition code flags move. In a privileged mode the whole
-    form writes the whole word.
-
-    The reserved bits are written along with everything else, which is worth
-    saying because the opposite is the tempting reading. Section 7.4.2 does say
-    the reserved bits shall be preserved, but it says it under a heading that
-    introduces rules a *program* should observe to stay compatible with future
-    processors. It is advice to whoever writes the MSR, not a statement that the
-    silicon drops the bits, and modelling it as masking would be inventing a gate
-    the document never describes.
-    """
     spsr = bool(word & 1 << 22)
     held = cpu.registers.saved() if spsr else cpu.registers.cpsr
     if held is None:
@@ -280,13 +194,6 @@ def _write_psr(cpu: Cpu, word: int, value: int, whole: bool) -> None:
 
 
 def _finish(cpu: Cpu, register_shift: bool) -> None:
-    """The last cycle of a data operation, which is not the same access either way.
-
-    Table 5 gives the plain form one row, an opcode fetch at `pc+8`. The
-    register-specified shift form gets two, and its second row drives `pc+12`
-    with `Nopc` HIGH and no data, because the fetch already happened in the row
-    before it.
-    """
     if register_shift:
         cpu.spend(SEQUENTIAL, cpu.registers.pc + 12, nopc=1)
     else:
@@ -295,7 +202,6 @@ def _finish(cpu: Cpu, register_shift: bool) -> None:
 
 
 def data_processing(cpu: Cpu, word: int) -> None:
-    """Table 5, in all four of its shapes."""
     opcode = word >> 21 & 0xF
     setting = bool(word & 1 << 20)
     destination = word >> 12 & 0xF
@@ -337,25 +243,12 @@ def _v(cpu: Cpu) -> bool:
 
 
 def _restore_from_saved(cpu: Cpu) -> None:
-    """The form section 7.3.6 describes, which earlier parts spelled TEQP.
-
-    Its effect is to move `SPSR_<mode>` to the CPSR in a privileged mode, and to
-    do nothing in User mode. The datasheet names TEQP alone; the encoding class
-    covers all four of the opcodes that set flags without writing a result, and
-    that widening is recorded in divergences.json with the corpus behind it.
-    """
     saved = cpu.registers.saved()
     if saved is not None:
         cpu.registers.cpsr = saved
 
 
 def _to_counter(cpu: Cpu, value: int, setting: bool) -> None:
-    """Writing the result to R15, which invalidates the pipeline.
-
-    Section 7.3.4: with the S flag set the SPSR of the current mode is moved to
-    the CPSR as well, which is what makes a return from an exception restore both
-    the counter and the status in one instruction.
-    """
     if setting:
         _restore_from_saved(cpu)
     cpu.prefetch(NONSEQUENTIAL, cpu.registers.pc + 8)
@@ -365,7 +258,6 @@ def _to_counter(cpu: Cpu, value: int, setting: bool) -> None:
 
 
 def multiply(cpu: Cpu, word: int) -> None:
-    """Table 6, with `m` from the Booth bands rather than from a loop."""
     destination = word >> 16 & 0xF
     accumulate = bool(word & 1 << 21)
     setting = bool(word & 1 << 20)

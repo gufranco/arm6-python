@@ -1,11 +1,3 @@
-"""That every exception this package raises is one class, reachable by name.
-
-An exception defined twice under one name is a trap that looks like it works,
-and one that cannot be imported can only be handled by catching everything. Both
-are cheap to check and expensive to meet in a caller's code, so they are checked
-here rather than left to a reader of the source.
-"""
-
 from __future__ import annotations
 
 import sys

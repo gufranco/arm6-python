@@ -1,17 +1,3 @@
-"""That a whole part behaves, and costs, what chapter 10 and Table 20 say.
-
-The cycle counts here are the point of the file. A model can spend the right
-number of cycles driving the wrong addresses, so the bus record is checked as
-well as the total, and every figure is the one Table 20 prints for that form.
-
-One of them is not. Table 5 gives a data operation with a register-specified
-shift two rows whose pins are byte for byte identical to the first two rows of
-Table 6's shortest multiply, which Table 20 costs at `1S+1I`. Table 20 costs the
-data operation at `1S+1S`. The two cannot both be right, the per-cycle table is
-the finer statement, and the divergence is recorded rather than resolved by
-preference.
-"""
-
 from __future__ import annotations
 
 import sys

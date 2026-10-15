@@ -1,14 +1,3 @@
-"""That the store is thirty two bits wide, unclean, and endian the way the pin says.
-
-ARM60 drives `a[31:0]`, so the space is four gigabytes and no model can allocate
-it. It is held sparsely and everything nobody wrote answers a reproducible
-pattern derived from the seed, because a read of a word nothing wrote is a defect
-on the board and a store that answers zero turns that defect into a passing test.
-
-`bigend` is a pin rather than a property of the part, so both orders are modelled
-and neither is presented as the one the silicon chose.
-"""
-
 from __future__ import annotations
 
 import sys

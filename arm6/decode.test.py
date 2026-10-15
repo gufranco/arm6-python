@@ -1,17 +1,3 @@
-"""That every encoding lands in one of the eleven rows Figure 28 prints, and no other.
-
-Figure 28 is the whole instruction set on one page, and what it does not have
-decides as much as what it does. There is no halfword transfer row, no signed
-load row, no long multiply row and no branch-and-exchange row, so four of the
-files in the published conformance corpus describe encodings this part does not
-have. That is rung one from the part's own sheet rather than an inference from
-the architecture's history, and it is checked here.
-
-The rows overlap in their top bits, so the order they are tried in is part of the
-decoding rather than an implementation detail: multiply and swap both read as
-data processing until their bottom byte is looked at.
-"""
-
 from __future__ import annotations
 
 import sys

@@ -1,13 +1,3 @@
-"""That the ALU, the immediate rotate and the multiplier match what the pages say.
-
-The multiplier is the sharpest difference between this part and the one the
-published conformance corpus was recorded from. ARM60 section 10.3 gives a 2 bit
-Booth's algorithm with early termination, so the multiplier is consumed two bits
-at a time and `m` runs to sixteen. The ARM7TDMI consumes eight bits at a time and
-its `m` runs to four. Both terminate early; the radix is what differs, and every
-boundary Table 20 states is checked here.
-"""
-
 from __future__ import annotations
 
 import sys
@@ -271,13 +261,6 @@ class NothingHereKeepsADictionaryTest(unittest.TestCase):
 
 
 class DrivenAsWholeInstructionsTest(unittest.TestCase):
-    """The forms whose whole point is a register the pure helpers cannot see.
-
-    A status register transfer, a write to R15 and a shift whose amount comes out
-    of a register all need a part rather than an ALU, so they are driven here
-    instead of in the checks above.
-    """
-
     def part(self, *words: int) -> Cpu:
         image = b"".join(one.to_bytes(4, "little") for one in words)
         held = Cpu("arm60", Memory(image=image, fill=0), fill=0)

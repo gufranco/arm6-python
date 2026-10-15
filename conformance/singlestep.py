@@ -1,37 +1,3 @@
-"""Check this core against the corpus published for a later part, filtered.
-
-The corpus is a recording from an ARM7TDMI, which is a different processor from
-the one modelled here. Most of an instruction set is shared and none of a bus is,
-so this reads the state blocks and never the timing: what an instruction left in
-the registers is a fact about the architecture, and how many cycles it took on
-that part's bus is a fact about that part.
-
-The filter is in `suites.json` beside this file, entry by entry, each naming the
-sentence behind it. It is not tidying. Every exclusion is a place where the two
-parts genuinely differ or where one of them has no answer, and an exclusion that
-could not name its sentence would be a way of hiding a disagreement.
-
-One thing here is read out of the transaction block and it is worth saying why.
-The corpus carries no memory dump, so the only record of what the generator's
-memory held is what its core read out of it. That is initial state rather than
-bus behaviour, and without it no instruction that touches memory could be
-replayed at all. Nothing else in that block is read: not the cycle numbering,
-which the publisher's own readme marks experimental, not the access mask, which
-is that part's bus signalling, and not the number or order of the transactions.
-
-The corpus is not carried here. It is nearly a gigabyte and it belongs to its own
-project, so this takes a path to a local checkout and reports honestly when there
-is not one:
-
-    git clone --filter=blob:none --sparse --depth=1 \\
-        https://github.com/SingleStepTests/ARM7TDMI.git
-    git -C ARM7TDMI sparse-checkout set v1
-    python3 -m conformance.singlestep ARM7TDMI/v1
-
-Usage:
-    python3 -m conformance.singlestep [path] [--limit N] [--count]
-"""
-
 from __future__ import annotations
 
 import json
@@ -50,42 +16,20 @@ from arm6.errors import Arm6Error  # noqa: E402
 from arm6.memory import Memory  # noqa: E402
 
 MAGIC = 0xD33DBAE0
-"""The four bytes every one of these files opens with."""
 
 STATE_WORDS = 40
-"""How many words a state block carries, checked rather than assumed."""
 
 CPSR = 31
-"""Where the status register sits in a state block.
-
-The layout was derived from the files rather than from a document, because the
-transcoding script the publisher's readme names is not in the repository at the
-pinned commit. Words 0 to 15 are R0 to R15; 16 to 22 are R8 to R14 as FIQ sees
-them; 23 to 30 are R13 and R14 for supervisor, abort, IRQ and undefined in that
-order; 31 is the CPSR; 32 to 36 are the five SPSRs; and 37 to 39 are the
-generator's own pipeline words and a trailing access flag, which are artefacts of
-its core rather than architectural state and are not compared.
-
-One thing about that layout is easy to get wrong and costs a run of false
-disagreements. Words 0 to 15 are the **base** bank rather than the current mode's
-view. A branch with link executed in IRQ mode leaves the link in word 28, and
-word 14 keeps whatever it held, so a reader that treated word 14 as the visible
-R14 would report every such case as a mismatch and the model would be blamed for
-it.
-"""
 
 SPSR_AT = 32
 
 SPSR_ORDER = ("fiq", "svc", "abt", "irq", "und")
 
 FIQ_LOW_AT = 16
-"""R8 to R12 as FIQ sees them, the five registers only that mode banks."""
 
 BANKS_AT = {"fiq": 21, "svc": 23, "abt": 25, "irq": 27, "und": 29}
-"""Where each mode's R13 and R14 sit. The base bank's pair is words 13 and 14."""
 
 PREFETCH = 8
-"""The corpus records R15 as the executing address plus two words, as the part does."""
 
 WHOLE_FILES = {
     "arm_bx": "no such row in Figure 28",
@@ -96,7 +40,6 @@ WHOLE_FILES = {
     "arm_mcr_mrc": "no coprocessor attached",
     "arm_stc_ldc": "no coprocessor attached",
 }
-"""The seven files this part has no answer for, and the reason in each case."""
 
 ARM_FILES = (
     "arm_b_bl",
@@ -120,24 +63,16 @@ ARM_FILES = (
     "arm_swi",
     "arm_swp",
 )
-"""The twenty ARM-state files the corpus publishes, in the order it names them.
-
-Written out rather than globbed because it is also the list a fetch works from,
-and a fetch cannot glob a repository it has not cloned yet.
-"""
 
 SYSTEM_MODE = 0b11111
 
 EXAMPLES = 5
 
 
-class NotACorpus(Exception):
-    """A file that does not open with the magic these files open with."""
+class NotACorpus(Exception): ...
 
 
 class Case(NamedTuple):
-    """One recorded case: two states, the memory its reads saw, and the encoding."""
-
     initial: tuple[int, ...]
     final: tuple[int, ...]
     reads: tuple[tuple[int, int, int], ...]
@@ -146,8 +81,6 @@ class Case(NamedTuple):
 
 
 class Tally:
-    """What a run examined, so that a count separates coverage from silence."""
-
     def __init__(self) -> None:
         self.files = 0
         self.compared = 0
@@ -166,12 +99,6 @@ def pinned() -> dict[str, Any]:
 
 
 def cases_in(data: bytes) -> Iterator[Case]:
-    """Every case in one file of the corpus, in the order it was recorded.
-
-    The format is a magic word and a count, then length-prefixed records of typed
-    blocks. It is read here rather than transcoded because a transcode of nearly
-    a gigabyte to produce a comparison is a gigabyte nobody needs on disk.
-    """
     magic, _count = struct.unpack_from("<II", data, 0)
     if magic != MAGIC:
         raise NotACorpus(f"0x{magic:08X} is not the magic these files open with")
@@ -190,12 +117,6 @@ def cases_in(data: bytes) -> Iterator[Case]:
 
 
 def _case(blocks: dict[int, tuple[int, ...]]) -> Case:
-    """One record, with the memory its reads saw kept at the width they read it.
-
-    The width matters and is easy to drop. A byte read records one byte at a byte
-    address, so seeding it as a word would write four bytes at the aligned address
-    and put three of them somewhere nothing asked for.
-    """
     transactions = blocks.get(3, (0,))
     reads = []
     for one in range(transactions[0]):
@@ -213,40 +134,11 @@ def _case(blocks: dict[int, tuple[int, ...]]) -> Case:
 
 
 MEANINGLESS_CARRY = 1 << 29
-"""The C flag after a multiply that sets flags.
-
-Section 7.5.2 says it outright: the C flag is set to a meaningless value. A model
-that reproduced whatever the generator's part happened to leave there would be
-holding this one to a number its own manufacturer refused to state, so the bit is
-left out of the comparison rather than the whole case being thrown away. N and Z
-are stated and are still checked.
-"""
 
 RESERVED_ON_A_PSR_WRITE = 0x0FFFFF00
-"""Bits 27 to 8, which the two parts' PSR writes reach differently.
-
-ARM60 has two MSR forms and neither is a field mask. The whole form transfers the
-register contents to the PSR, and the flags form writes, in section 7.4.3's own
-words, the most significant four bits of the register contents to the N, Z, C and
-V flags. The generator's part has the fsxc field mask instead, so the same
-encoding reaches the top byte rather than the top nibble and leaves bits 23 to 8
-alone rather than writing them.
-
-Every one of those bits is reserved on ARM60, and what the silicon does with them
-is not stated. The corpus cannot answer it either, because the mechanism it
-answers with is one this part does not have. So the region is left out of the
-comparison, the defined bits stay in, and the question is recorded as open rather
-than settled by whichever answer would have made the run greener.
-"""
 
 
 def _not_comparable(word: int) -> int:
-    """Which status bits this encoding puts outside a fair comparison.
-
-    Two cases, both narrow, both named. Masking a bit is a way of hiding a
-    disagreement, so each one names the sentence that makes it a difference
-    between the parts rather than a difference between the models.
-    """
     if word & 0x0FC000F0 == 0x00000090 and word & 1 << 20:
         return MEANINGLESS_CARRY
     if word & 0x0DBFF000 == 0x0128F000 or word & 0x0FBFFFF0 == 0x0129F000:
@@ -255,17 +147,10 @@ def _not_comparable(word: int) -> int:
 
 
 def dropped(stem: str) -> str | None:
-    """Why a whole file is left out, or nothing when it is not."""
     return WHOLE_FILES.get(stem)
 
 
 def excluded(case: Case, stem: str) -> str | None:
-    """Why one case is left out, or nothing when it stays in.
-
-    Each of these is a place where ARM60 and the generator's part genuinely
-    differ, or where one of them has no answer. None of them is a case this
-    package finds inconvenient.
-    """
     status = case.initial[CPSR]
     if status & psr.MODE_MASK == SYSTEM_MODE:
         return "system mode"
@@ -286,18 +171,10 @@ def excluded(case: Case, stem: str) -> str | None:
 
 
 def _fields(word: int) -> tuple[int, int, int, int]:
-    """Rn, Rd, Rs and Rm, at the four places every encoding puts them."""
     return word >> 16 & 0xF, word >> 12 & 0xF, word >> 8 & 0xF, word & 0xF
 
 
 def _forbidden(case: Case, stem: str, privileged: bool) -> str | None:
-    """The places the datasheet says a register shall not be used, per instruction.
-
-    Each of these is a sentence rather than a judgement, and each is a place where
-    ARM60 declines to say what happens. The generator's part does something, and
-    what it does is not evidence about a question this part's document refuses to
-    answer.
-    """
     word = case.opcode
     rn, rd, rs, rm = _fields(word)
     if stem == "arm_mul_mla" and 15 in (rn, rd, rs, rm):
@@ -341,7 +218,6 @@ def _forbidden(case: Case, stem: str, privileged: bool) -> str | None:
 
 
 def _visible(case: Case, index: int) -> int:
-    """One register as the case's own mode sees it, from the banked layout."""
     mode = psr.mode_of(case.initial[CPSR])
     if index < 8 or index == 15:
         return case.initial[index]
@@ -352,38 +228,16 @@ def _visible(case: Case, index: int) -> int:
 
 
 def _lands_in_a_thirty_two_bit_mode(case: Case) -> bool:
-    """Whether the mode this MSR would write is one the other part can also hold.
-
-    ARM6 has four 26-bit modes, whose encodings carry a zero in M[4], and
-    Application Note 11 is the only document that prints them. The generator's
-    part has no such modes and forces that bit, so a case whose source names one
-    is a case the two parts cannot agree about. A source that names no ARM60 mode
-    at all is excluded by the same test, because this part has no answer for it.
-    """
     wanted = _visible(case, case.opcode & 0xF) & psr.MODE_MASK
     found = psr.mode_for(wanted)
     return found is not None and found.wide
 
 
 def _register_shift(word: int) -> bool:
-    """A data operation whose shift amount comes out of a register.
-
-    Section 7.3.2 says Rs can be any general register other than R15, so a case
-    that names R15 there is one the datasheet has stopped describing.
-    """
     return word & 0x0E000010 == 0x00000010
 
 
 def _writes_the_counter_with_the_flag(case: Case) -> bool:
-    """A data processing instruction with the S flag set and R15 as its destination.
-
-    ARM60 section 7.3.4 gives this form a meaning, moving the SPSR of the current
-    mode into the CPSR, and then says outright that it shall not be used in User
-    mode. A user mode has no SPSR to move, so there is nothing for the sentence to
-    describe and the datasheet does not describe one. The generator's part does
-    something, and what it does is not this part's answer to a question this
-    part's document declines to answer.
-    """
     word = case.opcode
     if word & 0x0C000000 != 0:
         return False
@@ -391,16 +245,6 @@ def _writes_the_counter_with_the_flag(case: Case) -> bool:
 
 
 def _load(case: Case) -> Cpu:
-    """A part in exactly the state the case declares, and memory it can read.
-
-    This is the one place in the repository that sets the program counter by hand
-    instead of resetting the part, and it is deliberate. A reset forces the
-    counter to zero, the mode to supervisor and the two interrupt disables on,
-    and it overwrites the supervisor link register with a value the datasheet
-    calls undefined. Every one of those is state this case declares, so resetting
-    here would destroy the thing being compared. Anywhere a caller has a choice,
-    `reset` is the way in.
-    """
     memory = Memory(fill=0)
     for size, address, held in case.reads:
         if size == 1:
@@ -424,7 +268,6 @@ def _load(case: Case) -> Cpu:
 
 
 def compare(case: Case) -> list[str]:
-    """Run one case and report every place the state came out different."""
     cpu = _load(case)
     try:
         cpu.step()
@@ -468,7 +311,6 @@ def sweep(
     counting: bool = False,
     say: Callable[[str], object] = print,
 ) -> Tally:
-    """Every usable case in every file, compared, with what was left out counted."""
     tally = Tally()
     for path in sorted(where.glob("arm_*.json.bin")):
         stem = path.stem.replace(".json", "")
@@ -502,7 +344,6 @@ def sweep(
 
 
 def report(tally: Tally) -> list[str]:
-    """What was examined, and when the answer is nothing, that rather than nothing."""
     if tally.compared == 0:
         return [
             "  no corpus on this machine, so nothing was compared.",
@@ -523,11 +364,6 @@ def verdict(tally: Tally) -> int:
 
 
 def wanted() -> list[str]:
-    """The files worth fetching: the ones the filter does not drop whole.
-
-    Fetching the other seven would be a third of a gigabyte of encodings this
-    part has no row for.
-    """
     return [f"/v1/{one}.json.bin" for one in ARM_FILES if one not in WHOLE_FILES]
 
 
