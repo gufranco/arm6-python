@@ -35,9 +35,6 @@ packages = ["arm6"]
 [tool.setuptools.dynamic]
 version = { attr = "arm6.version.VERSION" }
 
-[tool.setuptools.exclude-package-data]
-arm6 = ["*.test.py"]
-
 [tool.ruff]
 target-version = "py312"
 line-length = 100
