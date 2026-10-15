@@ -126,10 +126,10 @@ the case it exists for.
 ## Conventions that are not negotiable
 
 - Python only, standard library only, no dependencies.
-- No comments in source. Reasoning goes in docstrings, and a step that would need
+- No comments in source, and a docstring counts as one. A step that would need
   a comment is a step that should be a named function.
-- Tests sit beside the module they cover as `<module>.test.py`. Arrange, blank
-  line, one act, blank line, assert, with no section labels.
+- Tests sit beside the module they cover as `<module>.test.py`. Arrange, act
+  and assert, each block opened by its bare marker.
 - 100% statement and branch coverage, enforced. `mypy` at strict, with every
   optional error class on.
 - Everything a caller can catch is defined once, in `arm6/errors.py`, and
