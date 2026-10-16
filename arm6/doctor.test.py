@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -9,6 +11,10 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from arm6 import doctor  # noqa: E402
+
+SOURCE = ROOT / "arm6" / "doctor.py"
+
+VERDICT = re.compile(r"^  (\d+ checks, nothing to report|\d+ of \d+ checks did not pass)$")
 
 
 class OneFindingTest(unittest.TestCase):
@@ -221,6 +227,57 @@ class TheDoctorRunsWhereThePackageMightNotImportTest(unittest.TestCase):
             self.assertEqual(held.model.name, "arm60")
         finally:
             sys.path[:] = kept
+
+    def test_a_root_that_is_not_on_the_path_is_put_there(self) -> None:
+        # Arrange
+        path: list[str] = []
+
+        # Act
+        added = doctor._reachable(Path("/somewhere"), path)
+
+        # Assert
+        self.assertEqual((added, path), (True, ["/somewhere"]))
+
+    def test_a_root_already_on_the_path_is_left_alone(self) -> None:
+        # Arrange
+        path = ["/somewhere"]
+
+        # Act
+        added = doctor._reachable(Path("/somewhere"), path)
+
+        # Assert
+        self.assertEqual((added, path), (False, ["/somewhere"]))
+
+
+class TheDoctorRunsAsTheReadmeSaysTest(unittest.TestCase):
+    def test_running_it_as_a_file_from_elsewhere_prints_a_report_rather_than_a_traceback(
+        self,
+    ) -> None:
+        # Arrange
+        elsewhere = tempfile.mkdtemp()
+
+        # Act
+        finished = subprocess.run(
+            [sys.executable, str(SOURCE)],
+            capture_output=True,
+            text=True,
+            cwd=elsewhere,
+            check=False,
+        )
+
+        # Assert
+        self.assertNotIn("Traceback", finished.stderr)
+        self.assertRegex(finished.stdout.splitlines()[-1], VERDICT)
+
+    def test_the_readme_names_the_invocation_that_works(self) -> None:
+        # Arrange
+        readme = ROOT / "README.md"
+
+        # Act
+        said = readme.read_text()
+
+        # Assert
+        self.assertIn("python3 arm6/doctor.py", said)
 
 
 if __name__ == "__main__":

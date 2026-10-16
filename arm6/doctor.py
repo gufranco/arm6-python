@@ -21,6 +21,17 @@ def _version(where: Path | None = None) -> str:
 
 ROOT = Path(__file__).resolve().parent.parent
 
+
+def _reachable(root: Path = ROOT, path: list[str] | None = None) -> bool:
+    where = sys.path if path is None else path
+    if str(root) in where:
+        return False
+    where.insert(0, str(root))
+    return True
+
+
+_reachable()
+
 from arm6 import environment  # noqa: E402
 
 VERSION = _version()
