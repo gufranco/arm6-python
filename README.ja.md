@@ -2,7 +2,7 @@
 
 Pythonで書かれたARM60プロセッサです。1命令または1バスサイクルずつ進みます。すべての命令とそれが費やすすべてのサイクルはGEC Plessey ARM60データシートに、各命令後のプロセッサ状態はフィルタ済みのARM7TDMIコーパスに照らして検証されています。
 
-[English](README.md) &nbsp;|&nbsp; 日本語 &nbsp;|&nbsp; [简体中文](README.zh-Hans.md) &nbsp;|&nbsp; [繁體中文（香港）](README.zh-HK.md)
+[English](README.md) | 日本語 | [简体中文](README.zh-Hans.md) | [繁體中文（香港）](README.zh-HK.md)
 
 [![CI](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/gufranco/arm6-python)](https://github.com/gufranco/arm6-python/releases)

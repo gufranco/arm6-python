@@ -2,7 +2,7 @@
 
 用 Python 实现的 ARM60 处理器，每次推进一条指令或一个总线周期。每条指令及其耗费的每个周期都以 GEC Plessey ARM60 数据手册为准，每条指令执行后的处理器状态则以经过筛选的 ARM7TDMI 语料库为准。
 
-[English](README.md) &nbsp;|&nbsp; [日本語](README.ja.md) &nbsp;|&nbsp; 简体中文 &nbsp;|&nbsp; [繁體中文（香港）](README.zh-HK.md)
+[English](README.md) | [日本語](README.ja.md) | 简体中文 | [繁體中文（香港）](README.zh-HK.md)
 
 [![CI](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/gufranco/arm6-python)](https://github.com/gufranco/arm6-python/releases)

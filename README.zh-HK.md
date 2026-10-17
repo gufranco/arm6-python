@@ -2,7 +2,7 @@
 
 以 Python 實現的 ARM60 處理器，每次推進一條指令或一個總線週期。每條指令及其花費的每個週期均以 GEC Plessey ARM60 數據手冊為準，每條指令執行後的處理器狀態則以經過濾的 ARM7TDMI 案例集為準。
 
-[English](README.md) &nbsp;|&nbsp; [日本語](README.ja.md) &nbsp;|&nbsp; [简体中文](README.zh-Hans.md) &nbsp;|&nbsp; 繁體中文（香港）
+[English](README.md) | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | 繁體中文（香港）
 
 [![CI](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/gufranco/arm6-python)](https://github.com/gufranco/arm6-python/releases)
