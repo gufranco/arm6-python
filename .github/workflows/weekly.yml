@@ -1,23 +1,8 @@
-# Nothing here is new work. It is the same gate the pipeline runs, run again on a
-# schedule against whatever the ecosystem looks like that week.
-#
-# A model of a fixed piece of silicon does not change, so a green build today is
-# usually a green build next year. What moves underneath it is everything else: a
-# new Python release changes integer or annotation behaviour, a linter release
-# adds a rule, a checker release finds something the old one did not, a runner
-# image swaps a default. Each of those turns a passing project into a failing one
-# without a commit, and the difference between hearing about it on a Monday and
-# hearing about it from the next person to open a pull request is this file.
-#
-# It runs on the newest Python available rather than the pinned one, because the
-# point is to find out what the next version breaks before it is the only version
-# anybody has.
+---
 name: Weekly
 
 on:
   schedule:
-    # Early Monday, UTC. Late enough that a release landing over the weekend is
-    # already published, early enough to be read before the week starts.
     - cron: "17 6 * * 1"
   workflow_dispatch:
 
@@ -35,9 +20,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The oldest version supported and the newest that exists. A break in the
-        # first is a regression; a break in the second is a warning about the
-        # release everyone is about to be on.
         python: ["3.12", "3.14"]
     steps:
       - uses: actions/checkout@v7
@@ -47,9 +29,7 @@ jobs:
           python-version: ${{ matrix.python }}
           allow-prereleases: true
 
-      # Unpinned on purpose, which is the whole point of this file and the one
-      # place in the project where that is true. Every other workflow pins.
-      - name: Install the newest tools
+      - name: Install the newest tools, unpinned on purpose
         run: |
           python -m pip install --disable-pip-version-check \
             --upgrade ruff mypy coverage
@@ -78,15 +58,9 @@ jobs:
       - name: Coverage must still be total
         run: python -m coverage report
 
-      # The throughput floor, on an interpreter nobody has tested this on.
       - name: The model has not become several times slower
         run: python -m conformance.speed
 
-      # The corpus is not fetched here. This job exists to find out what a newer
-      # interpreter or a newer checker breaks, and the comparison against the
-      # recorded cases already runs on every push to main against a pinned
-      # commit. Fetching a third of a gigabyte weekly to re-answer a question
-      # nothing has changed would be paying for a result that is already known.
       - name: Say what this run did not cover
         run: |
           echo "The recorded cases are not compared here: that runs on every"

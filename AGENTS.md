@@ -95,6 +95,7 @@ ruff format --check .
 ruff check .
 mypy
 pnpm run format:check
+uvx yamllint==1.38.0 --strict .
 python3 -m coverage erase
 for file in $(find arm6 conformance -name '*.test.py' | sort); do
   python3 -m coverage run -a "$file"

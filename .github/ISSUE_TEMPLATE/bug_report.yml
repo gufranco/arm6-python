@@ -1,3 +1,4 @@
+---
 name: Something is wrong
 description: An instruction does the wrong thing, or nothing works at all
 labels: ["bug"]
