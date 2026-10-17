@@ -15,11 +15,12 @@ uvx ruff@0.16.3 check .
 uvx mypy@1.14.1
 pnpm install --frozen-lockfile && pnpm run format:check
 uvx yamllint==1.38.0 --strict .
-python3 -m coverage erase
+cov=(uvx --python 3.12 --from coverage==7.6.10 --with setuptools==84.0.0 coverage)
+"${cov[@]}" erase
 for f in $(find . -name '*.test.py' -not -path './packages/*' | sort); do
-  python3 -m coverage run -a "$f" || echo "FAILED $f"
+  "${cov[@]}" run -a "$f" || echo "FAILED $f"
 done
-python3 -m coverage report
+"${cov[@]}" report
 ```
 
 Coverage is a hard gate at 100% statement and branch. A branch with no test

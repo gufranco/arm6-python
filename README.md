@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/arm6-python)](https://github.com/gufranco/arm6-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**424,220** recorded cases compared, **0** disagreements, **62** quoted sentences placed on the page they cite, **1** part, **1,158** tests, **100%** statement and branch coverage, no dependencies
+**424,220** recorded cases compared, **0** disagreements, **62** quoted sentences placed on the page they cite, **1** part, **1,087** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from arm6 import Cpu, Memory
@@ -88,7 +88,7 @@ Releases follow [Semantic Versioning](https://semver.org/) and are cut from the 
 | `steps` | Instructions since the last reset |
 | `spent` | The last instruction's cost as `Cycles` |
 | `tally` | The running total as `Cycles`, kept across resets |
-| `bus.cycles` | One `Cycle` per bus cycle of the last instruction: `kind`, `address`, `nopc`, `nbw`, `nrw`, `ntrans`, `lock`, `data` |
+| `bus.cycles` | One `Cycle` per bus cycle of the last instruction: `kind`, `address`, `nopc`, `nbw`, `nrw`, `ntrans`, `lock`, `data`. `kind` is one of the Table 3 cycle types a part with no coprocessor attached drives: N, S or I, with `letter`, `name`, `nmreq`, `seq` and `touches_memory` |
 | `irq_line`, `fiq_line` | The level of each interrupt line |
 | `on_cycle` | A callable run after every bus cycle with the part as its argument, or `None`. `Clock` sets it |
 | `seed`, `bigend`, `lateabt` | The constructor arguments |

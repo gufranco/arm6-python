@@ -35,9 +35,8 @@ class CycleType:
 NONSEQUENTIAL = CycleType("N", "non-sequential", nmreq=0, seq=0)
 SEQUENTIAL = CycleType("S", "sequential", nmreq=0, seq=1)
 INTERNAL = CycleType("I", "internal", nmreq=1, seq=0)
-COPROCESSOR = CycleType("C", "coprocessor register transfer", nmreq=1, seq=1)
 
-TYPES = (NONSEQUENTIAL, SEQUENTIAL, INTERNAL, COPROCESSOR)
+TYPES = (NONSEQUENTIAL, SEQUENTIAL, INTERNAL)
 
 
 class Cycle:
@@ -100,5 +99,4 @@ class Recorder:
             s=counted["S"],
             n=counted["N"],
             i=counted["I"],
-            c=counted["C"],
         )

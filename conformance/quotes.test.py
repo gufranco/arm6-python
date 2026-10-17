@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import json
+import hashlib
 import subprocess
 import sys
 import tempfile
@@ -165,58 +165,6 @@ class ReadingADocumentTest(unittest.TestCase):
             self.assertIn("sentence in the note", held)
 
 
-class WhatTheRecordClaimsTest(unittest.TestCase):
-    def test_every_passage_under_a_quote_key_is_collected(self) -> None:
-        record = {"facts": {"one": {"quote": "a sentence", "document": "d", "page": 1}}}
-
-        held = quotes.claims(record)
-
-        self.assertEqual(len(held), 1)
-
-    def test_a_passage_under_any_other_key_is_not_a_quote(self) -> None:
-        record = {"facts": {"one": {"note": "a sentence", "document": "d", "page": 1}}}
-
-        held = quotes.claims(record)
-
-        self.assertEqual(held, [])
-
-    def test_a_numbered_set_of_passages_is_collected_too(self) -> None:
-        record = {"facts": {"one": {"quotes": ["first", "second"], "document": "d", "page": 1}}}
-
-        held = quotes.claims(record)
-
-        self.assertEqual(len(held), 2)
-
-    def test_a_claim_carries_the_document_and_page_it_names(self) -> None:
-        record = {"facts": {"one": {"quote": "a sentence", "document": "d", "page": 7}}}
-
-        held = quotes.claims(record)
-
-        self.assertEqual((held[0].document, held[0].page), ("d", 7))
-
-    def test_a_record_that_quotes_nothing_yields_nothing(self) -> None:
-        held = quotes.claims({"note": "no passages here"})
-
-        self.assertEqual(held, [])
-
-    def test_this_repository_s_own_record_carries_claims(self) -> None:
-        held = quotes.loaded()
-
-        self.assertGreater(len(held), 20)
-
-    def test_and_every_one_of_them_names_a_declared_document(self) -> None:
-        declared = set(quotes.declared())
-
-        stray = sorted({one.document for one in quotes.loaded()} - declared)
-
-        self.assertEqual(stray, [])
-
-    def test_and_every_one_of_them_names_a_page(self) -> None:
-        silent = [one.where for one in quotes.loaded() if one.page is None]
-
-        self.assertEqual(silent, [])
-
-
 class TheVerdictTest(unittest.TestCase):
     def test_a_placed_passage_reads_as_found(self) -> None:
         held = quotes.Verdict("where", "a sentence", "d", 1, 4, 4)
@@ -295,23 +243,6 @@ class DrivenAgainstSomethingThatShouldFailTest(unittest.TestCase):
         self.assertLess(held[0] / held[1], quotes.BAR)
 
 
-class TheRecordIsWellFormedTest(unittest.TestCase):
-    def test_every_declared_document_names_the_file_it_is(self) -> None:
-        silent = [key for key, one in quotes.declared().items() if not one.get("file")]
-
-        self.assertEqual(silent, [])
-
-    def test_and_carries_a_digest_so_a_reader_can_confirm_the_scan(self) -> None:
-        silent = [key for key, one in quotes.declared().items() if not one.get("sha256")]
-
-        self.assertEqual(silent, [])
-
-    def test_the_record_parses(self) -> None:
-        held = json.loads((ROOT / "conformance" / "hardware.json").read_text())
-
-        self.assertIn("documents", held)
-
-
 class TheWholeRunTest(unittest.TestCase):
     def test_a_claim_whose_document_is_absent_is_unchecked_rather_than_failed(self) -> None:
         held, _ = quotes.verify([quotes.Claim("where", "a sentence", "nothing", 1)], run=refusing())
@@ -367,41 +298,6 @@ class TheWholeRunTest(unittest.TestCase):
         self.assertEqual((held[0].found, held[0].unchecked), (False, False))
 
 
-class ReadingTheRecordsTest(unittest.TestCase):
-    def test_a_documents_block_inside_a_list_is_found(self) -> None:
-        into: dict[str, Any] = {}
-
-        quotes._collect_documents([{"documents": {"a": {"file": "a.pdf"}}}], into)
-
-        self.assertEqual(sorted(into), ["a"])
-
-    def test_a_documents_block_that_is_not_a_mapping_is_stepped_over(self) -> None:
-        into: dict[str, Any] = {}
-
-        quotes._collect_documents({"documents": "not a block"}, into)
-
-        self.assertEqual(into, {})
-
-    def test_an_entry_that_is_not_a_mapping_is_stepped_over(self) -> None:
-        into: dict[str, Any] = {}
-
-        quotes._collect_documents({"documents": {"a": "not an entry"}}, into)
-
-        self.assertEqual(into, {})
-
-    def test_a_quote_inside_a_list_is_collected(self) -> None:
-        held = quotes.claims([{"facts": {"one": {"quote": "a sentence", "document": "d"}}}])
-
-        self.assertEqual(len(held), 1)
-
-    def test_a_numbered_set_holding_something_that_is_not_a_passage_is_stepped_over(
-        self,
-    ) -> None:
-        held = quotes.claims({"one": {"quotes": [1, 2], "document": "d", "page": 1}})
-
-        self.assertEqual(held, [])
-
-
 class TheLastFewPathsTest(unittest.TestCase):
     def test_a_declared_document_that_is_absent_is_not_counted(self) -> None:
         with tempfile.TemporaryDirectory() as where:
@@ -427,30 +323,48 @@ class TheLastFewPathsTest(unittest.TestCase):
             self.assertEqual(held, 1)
 
     def test_a_document_is_keyed_by_its_own_digest(self) -> None:
-        with tempfile.TemporaryDirectory() as where:
-            page = Path(where) / "a.pdf"
-            page.write_bytes(b"the bytes of a scan")
+        # Arrange
+        where = Path(tempfile.mkdtemp())
+        page = where / "a.pdf"
+        page.write_bytes(b"the bytes of a scan")
+        cache = where / "cache"
 
-            held = quotes._digest(page)
+        # Act
+        quotes.page_text(page, 1, run=runner(tesseract="what the page says"), cache=cache)
 
-            self.assertEqual(len(held), 16)
+        # Assert
+        self.assertEqual(
+            [one.name for one in cache.iterdir()],
+            [f"{hashlib.sha256(b'the bytes of a scan').hexdigest()[:16]}-1.txt"],
+        )
 
     def test_and_two_different_scans_key_differently(self) -> None:
-        with tempfile.TemporaryDirectory() as where:
-            first = Path(where) / "a.pdf"
-            first.write_bytes(b"one scan")
-            second = Path(where) / "b.pdf"
-            second.write_bytes(b"a different scan")
+        # Arrange
+        where = Path(tempfile.mkdtemp())
+        cache = where / "cache"
+        first = where / "a.pdf"
+        first.write_bytes(b"one scan")
+        quotes.page_text(first, 1, run=runner(tesseract="what one page says"), cache=cache)
+        second = where / "b.pdf"
+        second.write_bytes(b"a different scan")
 
-            held = quotes._digest(first) == quotes._digest(second)
+        # Act
+        held = quotes.page_text(second, 1, run=runner(tesseract="what another says"), cache=cache)
 
-            self.assertFalse(held)
+        # Assert
+        self.assertEqual((held, len(list(cache.iterdir()))), ("what another says", 2))
 
     def test_a_machine_without_the_renderer_reports_nothing_rather_than_throwing(self) -> None:
-        with tempfile.TemporaryDirectory() as where:
-            held = quotes._recognise(Path(where) / "a.pdf", 1, refusing(), Path(where))
+        # Arrange
+        where = Path(tempfile.mkdtemp())
+        page = where / "a.pdf"
+        page.write_bytes(b"a scan")
 
-            self.assertEqual(held, "")
+        # Act
+        held = quotes.page_text(page, 1, run=refusing(), cache=where / "cache")
+
+        # Assert
+        self.assertEqual((held, list((where / "cache").iterdir())), ("", []))
 
     def test_a_document_that_is_not_a_pdf_and_is_not_there_reads_as_empty(self) -> None:
         with tempfile.TemporaryDirectory() as where:

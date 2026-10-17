@@ -138,7 +138,7 @@ MEANINGLESS_CARRY = 1 << 29
 RESERVED_ON_A_PSR_WRITE = 0x0FFFFF00
 
 
-def _not_comparable(word: int) -> int:
+def uncomparable_bits(word: int) -> int:
     if word & 0x0FC000F0 == 0x00000090 and word & 1 << 20:
         return MEANINGLESS_CARRY
     if word & 0x0DBFF000 == 0x0128F000 or word & 0x0FBFFFF0 == 0x0129F000:
@@ -217,7 +217,7 @@ def _forbidden(case: Case, stem: str, privileged: bool) -> str | None:
     return None
 
 
-def _visible(case: Case, index: int) -> int:
+def visible_register(case: Case, index: int) -> int:
     mode = psr.mode_of(case.initial[CPSR])
     if index < 8 or index == 15:
         return case.initial[index]
@@ -228,7 +228,7 @@ def _visible(case: Case, index: int) -> int:
 
 
 def _lands_in_a_thirty_two_bit_mode(case: Case) -> bool:
-    wanted = _visible(case, case.opcode & 0xF) & psr.MODE_MASK
+    wanted = visible_register(case, case.opcode & 0xF) & psr.MODE_MASK
     found = psr.mode_for(wanted)
     return found is not None and found.wide
 
@@ -294,7 +294,7 @@ def compare(case: Case) -> list[str]:
     counter = (cpu.registers.pc + PREFETCH) & 0xFFFFFFFF
     if counter != case.final[15]:
         found.append(f"R15 is 0x{counter:08X}, recorded 0x{case.final[15]:08X}")
-    mask = 0xFFFFFFFF & ~_not_comparable(case.opcode)
+    mask = 0xFFFFFFFF & ~uncomparable_bits(case.opcode)
     if cpu.registers.cpsr & mask != case.final[CPSR] & mask:
         found.append(f"CPSR is 0x{cpu.registers.cpsr:08X}, recorded 0x{case.final[CPSR]:08X}")
     for name, at in zip(SPSR_ORDER, range(SPSR_AT, SPSR_AT + 5), strict=True):

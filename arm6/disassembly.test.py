@@ -3,413 +3,491 @@ from __future__ import annotations
 import sys
 import unittest
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from arm6 import decode, disassembly, errors  # noqa: E402
+import arm6  # noqa: E402
+
+BRANCH = 0xEA000000
+
+MOVE = 0xE3A09181
+
+FIGURE_28_ROWS = {
+    "data processing",
+    "multiply",
+    "single data swap",
+    "single data transfer",
+    "undefined",
+    "block data transfer",
+    "branch",
+    "coprocessor data transfer",
+    "coprocessor data operation",
+    "coprocessor register transfer",
+    "software interrupt",
+}
 
 
 def image(*words: int) -> bytes:
     return b"".join(word.to_bytes(4, "little") for word in words)
 
 
-class Fixture(unittest.TestCase):
-    def only(self, word: int, address: int = 0) -> disassembly.Instruction:
-        return disassembly.decode(image(word), 0, address)
+def spelled(found: list[Any]) -> list[tuple[str, str]]:
+    return [(one.mnemonic, one.text) for one in found]
 
 
-class OneWordTest(Fixture):
-    def test_a_word_knows_where_it_was_found(self) -> None:
-        found = disassembly.decode(image(0xEA000000, 0xEA000000), 4, 0x1000)
+class OneWordTest(unittest.TestCase):
+    def test_a_word_knows_where_it_was_found_and_what_it_is(self) -> None:
+        # Arrange
+        data = image(BRANCH, 0x1A000000)
 
-        self.assertEqual((found.address, found.offset, found.size), (0x1000, 4, 4))
+        # Act
+        found = arm6.disassemble(data, offset=4, address=0x1000)
 
-    def test_a_word_carries_the_condition_the_datasheet_names(self) -> None:
-        found = self.only(0x1A000000)
+        # Assert
+        self.assertEqual(
+            [(one.address, one.offset, one.size, one.condition, one.kind) for one in found],
+            [(0x1000, 4, 4, "NE", "branch")],
+        )
 
-        self.assertEqual(found.condition, "NE")
+    def test_a_word_shorter_than_an_instruction_ends_the_listing(self) -> None:
+        # Arrange
+        data = b"\x00\x00\x00"
 
-    def test_a_word_carries_the_row_of_figure_28_it_belongs_to(self) -> None:
-        found = self.only(0xEA000000)
+        # Act
+        found = arm6.disassemble(data)
 
-        self.assertEqual(found.kind, decode.BRANCH)
+        # Assert
+        self.assertEqual(found, [])
 
-    def test_a_word_shorter_than_an_instruction_is_refused(self) -> None:
-        with self.assertRaises(errors.Truncated):
-            disassembly.decode(b"\x00\x00\x00")
+    def test_an_offset_outside_the_image_ends_the_listing(self) -> None:
+        # Arrange
+        data = image(BRANCH)
 
-    def test_an_offset_outside_the_image_is_refused(self) -> None:
-        with self.assertRaises(errors.Truncated):
-            disassembly.decode(image(0xEA000000), 8)
+        # Act
+        found = arm6.disassemble(data, offset=8)
+
+        # Assert
+        self.assertEqual(found, [])
 
 
-class BranchTest(Fixture):
+class BranchTest(unittest.TestCase):
     def test_a_branch_forwards_resolves_its_target(self) -> None:
-        found = self.only(0xEA00002A, 0x000000)
+        # Arrange
+        data = image(0xEA00002A)
 
-        self.assertEqual((found.mnemonic, found.operand, found.text), ("b", 0x0000B0, "b 0x0000B0"))
+        # Act
+        found = arm6.disassemble(data, address=0)
+
+        # Assert
+        self.assertEqual(
+            [(one.mnemonic, one.operand, one.text) for one in found], [("b", 0xB0, "b 0x0000B0")]
+        )
 
     def test_a_branch_backwards_resolves_its_target(self) -> None:
-        found = self.only(0xEAFFFFFE, 0x001000)
+        # Arrange
+        data = image(0xEAFFFFFE)
 
-        self.assertEqual(found.operand, 0x001000)
+        # Act
+        found = arm6.disassemble(data, address=0x1000)
+
+        # Assert
+        self.assertEqual([one.operand for one in found], [0x1000])
 
     def test_a_branch_with_link_says_so(self) -> None:
-        found = self.only(0xEB00003F, 0x0001AC)
+        # Arrange
+        data = image(0xEB00003F)
 
-        self.assertEqual((found.mnemonic, found.text), ("bl", "bl 0x0002B0"))
+        # Act
+        found = arm6.disassemble(data, address=0x1AC)
+
+        # Assert
+        self.assertEqual(spelled(found), [("bl", "bl 0x0002B0")])
 
     def test_a_conditional_branch_carries_its_condition_into_the_text(self) -> None:
-        found = self.only(0x0A000010, 0x0001A8)
+        # Arrange
+        data = image(0x0A000010)
 
-        self.assertEqual(found.text, "beq 0x0001F0")
+        # Act
+        found = arm6.disassemble(data, address=0x1A8)
+
+        # Assert
+        self.assertEqual(spelled(found), [("b", "beq 0x0001F0")])
 
 
-class DataProcessingTest(Fixture):
-    def test_a_move_of_an_immediate_reads_as_one(self) -> None:
-        found = self.only(0xE3A09181)
+class DataProcessingTest(unittest.TestCase):
+    def test_each_operand_shape_names_its_registers_and_its_number(self) -> None:
+        # Arrange
+        data = image(MOVE, 0xE1A0F00E, 0xE2100001, 0xE3100020)
 
+        # Act
+        found = arm6.disassemble(data)
+
+        # Assert
         self.assertEqual(
-            (found.mnemonic, found.operand, found.text), ("mov", 0x40000020, "mov R9, #0x40000020")
+            [(one.mnemonic, one.operand, one.text) for one in found],
+            [
+                ("mov", 0x40000020, "mov R9, #0x40000020"),
+                ("mov", None, "mov PC, LR"),
+                ("ands", 1, "ands R0, R0, #0x1"),
+                ("tst", 0x20, "tst R0, #0x20"),
+            ],
         )
 
-    def test_a_move_of_a_register_reads_as_one(self) -> None:
-        found = self.only(0xE1A0F00E)
+    def test_a_shifted_register_operand_names_its_shift_and_each_zero_amount(self) -> None:
+        # Arrange
+        data = image(0xE1A00240, 0xE1A00310, 0xE1A00000, 0xE1A00020, 0xE1A00060)
 
-        self.assertEqual(found.text, "mov PC, LR")
+        # Act
+        found = arm6.disassemble(data)
 
-    def test_a_three_operand_operation_names_both_sources(self) -> None:
-        found = self.only(0xE2100001)
-
-        self.assertEqual(found.text, "ands R0, R0, #0x1")
-
-    def test_a_comparison_names_no_destination(self) -> None:
-        found = self.only(0xE3100020)
-
-        self.assertEqual((found.mnemonic, found.text), ("tst", "tst R0, #0x20"))
-
-    def test_a_shifted_register_operand_names_its_shift(self) -> None:
-        found = self.only(0xE1A00240)
-
-        self.assertEqual(found.text, "mov R0, R0, asr #4")
-
-    def test_a_register_controlled_shift_names_the_register(self) -> None:
-        found = self.only(0xE1A00310)
-
-        self.assertEqual(found.text, "mov R0, R0, lsl R3")
-
-    def test_a_rotate_of_zero_is_left_out_of_the_text(self) -> None:
-        found = self.only(0xE1A00000)
-
-        self.assertEqual(found.text, "mov R0, R0")
-
-    def test_a_shift_of_zero_that_means_thirty_two_says_thirty_two(self) -> None:
-        found = self.only(0xE1A00020)
-
-        self.assertEqual(found.text, "mov R0, R0, lsr #32")
-
-    def test_a_rotate_right_extended_is_written_as_the_datasheet_does(self) -> None:
-        found = self.only(0xE1A00060)
-
-        self.assertEqual(found.text, "mov R0, R0, rrx")
-
-    def test_reading_the_status_register_is_not_a_comparison(self) -> None:
-        found = self.only(0xE10F0000)
-
-        self.assertEqual((found.mnemonic, found.text), ("mrs", "mrs R0, cpsr"))
-
-    def test_reading_the_saved_status_register_names_it(self) -> None:
-        found = self.only(0xE14F0000)
-
-        self.assertEqual(found.text, "mrs R0, spsr")
-
-    def test_writing_the_whole_status_register_names_it(self) -> None:
-        found = self.only(0xE129F000)
-
-        self.assertEqual((found.mnemonic, found.text), ("msr", "msr cpsr, R0"))
-
-    def test_writing_only_the_flags_says_so(self) -> None:
-        found = self.only(0xE128F000)
-
-        self.assertEqual(found.text, "msr cpsr_flg, R0")
-
-    def test_writing_the_flags_from_an_immediate_reads_as_one(self) -> None:
-        found = self.only(0xE328F00F)
-
-        self.assertEqual(found.text, "msr cpsr_flg, #0xF")
-
-
-class MultiplyTest(Fixture):
-    def test_a_multiply_names_its_three_registers(self) -> None:
-        found = self.only(0xE0000291)
-
-        self.assertEqual((found.mnemonic, found.text), ("mul", "mul R0, R1, R2"))
-
-    def test_a_multiply_that_accumulates_names_the_fourth(self) -> None:
-        found = self.only(0xE0234192)
-
-        self.assertEqual((found.mnemonic, found.text), ("mla", "mla R3, R2, R1, R4"))
-
-    def test_a_multiply_that_sets_the_flags_says_so(self) -> None:
-        found = self.only(0xE0100291)
-
-        self.assertEqual(found.text, "muls R0, R1, R2")
-
-
-class SwapTest(Fixture):
-    def test_a_word_swap_names_its_registers(self) -> None:
-        found = self.only(0xE1021093)
-
-        self.assertEqual((found.mnemonic, found.text), ("swp", "swp R1, R3, [R2]"))
-
-    def test_a_byte_swap_says_so(self) -> None:
-        found = self.only(0xE1421093)
-
-        self.assertEqual(found.mnemonic, "swpb")
-
-
-class SingleDataTransferTest(Fixture):
-    def test_a_load_with_no_offset_leaves_it_out(self) -> None:
-        found = self.only(0xE5100000)
-
-        self.assertEqual((found.mnemonic, found.operand, found.text), ("ldr", 0, "ldr R0, [R0]"))
-
-    def test_a_store_with_an_immediate_offset_names_it(self) -> None:
-        found = self.only(0xE5898004)
-
+        # Assert
         self.assertEqual(
-            (found.mnemonic, found.operand, found.text), ("str", 4, "str R8, [R9, #0x4]")
+            [one.text for one in found],
+            [
+                "mov R0, R0, asr #4",
+                "mov R0, R0, lsl R3",
+                "mov R0, R0",
+                "mov R0, R0, lsr #32",
+                "mov R0, R0, rrx",
+            ],
         )
 
-    def test_a_negative_immediate_offset_is_signed(self) -> None:
-        found = self.only(0xE5198004)
+    def test_a_status_register_transfer_is_not_a_comparison(self) -> None:
+        # Arrange
+        data = image(0xE10F0000, 0xE14F0000, 0xE129F000, 0xE128F000, 0xE328F00F)
 
-        self.assertEqual((found.operand, found.text), (-4, "ldr R8, [R9, #-0x4]"))
+        # Act
+        found = arm6.disassemble(data)
 
-    def test_a_byte_load_says_so(self) -> None:
-        found = self.only(0xE5DB0020)
+        # Assert
+        self.assertEqual(
+            spelled(found),
+            [
+                ("mrs", "mrs R0, cpsr"),
+                ("mrs", "mrs R0, spsr"),
+                ("msr", "msr cpsr, R0"),
+                ("msr", "msr cpsr_flg, R0"),
+                ("msr", "msr cpsr_flg, #0xF"),
+            ],
+        )
 
-        self.assertEqual((found.mnemonic, found.text), ("ldrb", "ldrb R0, [R11, #0x20]"))
+
+class MultiplyAndSwapTest(unittest.TestCase):
+    def test_a_multiply_names_its_registers_and_whether_it_sets_the_flags(self) -> None:
+        # Arrange
+        data = image(0xE0000291, 0xE0234192, 0xE0100291)
+
+        # Act
+        found = arm6.disassemble(data)
+
+        # Assert
+        self.assertEqual(
+            spelled(found),
+            [
+                ("mul", "mul R0, R1, R2"),
+                ("mla", "mla R3, R2, R1, R4"),
+                ("muls", "muls R0, R1, R2"),
+            ],
+        )
+
+    def test_a_swap_names_its_registers_and_its_width(self) -> None:
+        # Arrange
+        data = image(0xE1021093, 0xE1421093)
+
+        # Act
+        found = arm6.disassemble(data)
+
+        # Assert
+        self.assertEqual(
+            spelled(found), [("swp", "swp R1, R3, [R2]"), ("swpb", "swpb R1, R3, [R2]")]
+        )
+
+
+class SingleDataTransferTest(unittest.TestCase):
+    def test_an_immediate_offset_is_carried_as_the_operand(self) -> None:
+        # Arrange
+        data = image(0xE5100000, 0xE5898004, 0xE5198004, 0xE5DB0020)
+
+        # Act
+        found = arm6.disassemble(data)
+
+        # Assert
+        self.assertEqual(
+            [(one.mnemonic, one.operand, one.text) for one in found],
+            [
+                ("ldr", 0, "ldr R0, [R0]"),
+                ("str", 4, "str R8, [R9, #0x4]"),
+                ("ldr", -4, "ldr R8, [R9, #-0x4]"),
+                ("ldrb", 0x20, "ldrb R0, [R11, #0x20]"),
+            ],
+        )
 
     def test_a_load_relative_to_the_program_counter_resolves_the_literal(self) -> None:
-        found = self.only(0xE59F0788, 0x00011C)
+        # Arrange
+        data = image(0xE59F0788)
 
-        self.assertEqual((found.operand, found.text), (0x0008AC, "ldr R0, [PC, #0x788]"))
+        # Act
+        found = arm6.disassemble(data, address=0x11C)
 
-    def test_a_register_offset_names_the_register(self) -> None:
-        found = self.only(0xE7910002)
+        # Assert
+        self.assertEqual(
+            [(one.operand, one.text) for one in found], [(0x8AC, "ldr R0, [PC, #0x788]")]
+        )
 
-        self.assertEqual((found.operand, found.text), (None, "ldr R0, [R1, R2]"))
+    def test_a_register_offset_names_the_register_and_carries_no_number(self) -> None:
+        # Arrange
+        data = image(0xE7910002, 0xE7910102)
 
-    def test_a_shifted_register_offset_names_the_shift(self) -> None:
-        found = self.only(0xE7910102)
+        # Act
+        found = arm6.disassemble(data)
 
-        self.assertEqual(found.text, "ldr R0, [R1, R2, lsl #2]")
+        # Assert
+        self.assertEqual(
+            [(one.operand, one.text) for one in found],
+            [(None, "ldr R0, [R1, R2]"), (None, "ldr R0, [R1, R2, lsl #2]")],
+        )
 
-    def test_a_post_indexed_transfer_writes_the_offset_outside_the_brackets(self) -> None:
-        found = self.only(0xE4910004)
+    def test_the_indexing_decides_where_the_offset_is_written(self) -> None:
+        # Arrange
+        data = image(0xE4910004, 0xE5B10004, 0xE6B10002, 0xE6F10002)
 
-        self.assertEqual(found.text, "ldr R0, [R1], #0x4")
+        # Act
+        found = arm6.disassemble(data)
 
-    def test_a_pre_indexed_transfer_that_writes_back_says_so(self) -> None:
-        found = self.only(0xE5B10004)
-
-        self.assertEqual(found.text, "ldr R0, [R1, #0x4]!")
-
-    def test_a_post_indexed_transfer_that_forces_user_mode_says_so(self) -> None:
-        found = self.only(0xE6B10002)
-
-        self.assertEqual(found.mnemonic, "ldrt")
-
-    def test_a_byte_transfer_that_forces_user_mode_says_both(self) -> None:
-        found = self.only(0xE6F10002)
-
-        self.assertEqual(found.mnemonic, "ldrbt")
-
-
-class BlockDataTransferTest(Fixture):
-    def test_a_push_reads_as_the_datasheet_writes_it(self) -> None:
-        found = self.only(0xE92D4300)
-
-        self.assertEqual((found.mnemonic, found.text), ("stmdb", "stmdb SP!, {R8, R9, LR}"))
-
-    def test_a_pop_reads_as_the_datasheet_writes_it(self) -> None:
-        found = self.only(0xE8BD8300)
-
-        self.assertEqual((found.mnemonic, found.text), ("ldmia", "ldmia SP!, {R8, R9, PC}"))
-
-    def test_the_two_remaining_addressing_modes_are_named(self) -> None:
-        after = self.only(0xE8100001)
-        before = self.only(0xE9900001)
-
-        self.assertEqual((after.mnemonic, before.mnemonic), ("ldmda", "ldmib"))
-
-    def test_a_transfer_of_the_user_bank_says_so(self) -> None:
-        found = self.only(0xE8500001)
-
-        self.assertEqual(found.text, "ldmda R0, {R0}^")
-
-    def test_a_transfer_with_no_registers_says_so_rather_than_showing_nothing(self) -> None:
-        found = self.only(0xE8100000)
-
-        self.assertEqual(found.text, "ldmda R0, {}")
+        # Assert
+        self.assertEqual(
+            spelled(found),
+            [
+                ("ldr", "ldr R0, [R1], #0x4"),
+                ("ldr", "ldr R0, [R1, #0x4]!"),
+                ("ldrt", "ldrt R0, [R1], R2"),
+                ("ldrbt", "ldrbt R0, [R1], R2"),
+            ],
+        )
 
 
-class SoftwareInterruptTest(Fixture):
+class BlockDataTransferTest(unittest.TestCase):
+    def test_a_push_and_a_pop_read_as_the_datasheet_writes_them(self) -> None:
+        # Arrange
+        data = image(0xE92D4300, 0xE8BD8300)
+
+        # Act
+        found = arm6.disassemble(data)
+
+        # Assert
+        self.assertEqual(
+            spelled(found),
+            [("stmdb", "stmdb SP!, {R8, R9, LR}"), ("ldmia", "ldmia SP!, {R8, R9, PC}")],
+        )
+
+    def test_the_other_modes_the_user_bank_and_an_empty_list_are_shown(self) -> None:
+        # Arrange
+        data = image(0xE8100001, 0xE9900001, 0xE8500001, 0xE8100000)
+
+        # Act
+        found = arm6.disassemble(data)
+
+        # Assert
+        self.assertEqual(
+            spelled(found),
+            [
+                ("ldmda", "ldmda R0, {R0}"),
+                ("ldmib", "ldmib R0, {R0}"),
+                ("ldmda", "ldmda R0, {R0}^"),
+                ("ldmda", "ldmda R0, {}"),
+            ],
+        )
+
+
+class TrapsAndCoprocessorsTest(unittest.TestCase):
     def test_a_software_interrupt_carries_its_comment_field(self) -> None:
-        found = self.only(0xEF123456)
+        # Arrange
+        data = image(0xEF123456)
 
+        # Act
+        found = arm6.disassemble(data)
+
+        # Assert
         self.assertEqual(
-            (found.mnemonic, found.operand, found.text), ("swi", 0x123456, "swi 0x123456")
+            [(one.mnemonic, one.operand, one.text) for one in found],
+            [("swi", 0x123456, "swi 0x123456")],
+        )
+
+    def test_a_coprocessor_transfer_names_the_coprocessor_and_its_offset(self) -> None:
+        # Arrange
+        data = image(0xED910102, 0xEC910102, 0xED810102)
+
+        # Act
+        found = arm6.disassemble(data)
+
+        # Assert
+        self.assertEqual(
+            [(one.mnemonic, one.operand, one.text) for one in found],
+            [
+                ("ldc", 8, "ldc p1, c0, [R1, #0x8]"),
+                ("ldc", 8, "ldc p1, c0, [R1], #0x8"),
+                ("stc", 8, "stc p1, c0, [R1, #0x8]"),
+            ],
+        )
+
+    def test_a_coprocessor_operation_and_both_register_moves_read_as_themselves(self) -> None:
+        # Arrange
+        data = image(0xEE123104, 0xEE213114, 0xEE313114)
+
+        # Act
+        found = arm6.disassemble(data)
+
+        # Assert
+        self.assertEqual(
+            spelled(found),
+            [
+                ("cdp", "cdp p1, 1, c3, c2, c4, 0"),
+                ("mcr", "mcr p1, 1, R3, c1, c4, 0"),
+                ("mrc", "mrc p1, 1, R3, c1, c4, 0"),
+            ],
+        )
+
+    def test_the_undefined_row_and_a_word_outside_the_figure_are_shown(self) -> None:
+        # Arrange
+        data = image(0xE6000010, 0x000000D0)
+
+        # Act
+        found = arm6.disassemble(data)
+
+        # Assert
+        self.assertEqual(
+            [(one.kind, one.mnemonic, one.text) for one in found],
+            [
+                ("undefined", "undefined", "undefined 0xE6000010"),
+                ("unspecified", "unspecified", "unspecifiedeq 0x000000D0"),
+            ],
         )
 
 
-class CoprocessorTest(Fixture):
-    def test_a_coprocessor_load_names_the_coprocessor(self) -> None:
-        found = self.only(0xED910102)
+class NoNumberTest(unittest.TestCase):
+    def test_a_word_whose_operand_field_denotes_no_number_carries_none(self) -> None:
+        # Arrange
+        data = image(0xE0000291, 0xE1021093, 0xE8BD8300, 0xEE123104, 0xEE213114, 0xE6000010)
 
+        # Act
+        found = arm6.disassemble(data + image(0x000000D0))
+
+        # Assert
+        self.assertEqual([one.operand for one in found], [None] * 7)
+
+
+class ConditionSpellingTest(unittest.TestCase):
+    def test_a_condition_follows_the_operation_and_precedes_any_suffix(self) -> None:
+        # Arrange
+        data = image(0x15DB0020, 0x15910000, 0x12100001)
+
+        # Act
+        found = arm6.disassemble(data)
+
+        # Assert
         self.assertEqual(
-            (found.mnemonic, found.operand, found.text), ("ldc", 8, "ldc p1, c0, [R1, #0x8]")
+            spelled(found),
+            [
+                ("ldrb", "ldrneb R0, [R11, #0x20]"),
+                ("ldr", "ldrne R0, [R1]"),
+                ("ands", "andnes R0, R0, #0x1"),
+            ],
         )
 
-    def test_a_post_indexed_coprocessor_transfer_writes_the_offset_outside(self) -> None:
-        found = self.only(0xEC910102)
+    def test_every_condition_the_datasheet_numbers_renders(self) -> None:
+        # Arrange
+        data = image(*((code << 28) | 0x0A000000 for code in range(16)))
 
-        self.assertEqual(found.text, "ldc p1, c0, [R1], #0x8")
+        # Act
+        found = arm6.disassemble(data)
 
-    def test_a_coprocessor_store_says_so(self) -> None:
-        found = self.only(0xED810102)
-
-        self.assertEqual(found.mnemonic, "stc")
-
-    def test_a_coprocessor_operation_names_its_registers(self) -> None:
-        found = self.only(0xEE123104)
-
-        self.assertEqual((found.mnemonic, found.text), ("cdp", "cdp p1, 1, c3, c2, c4, 0"))
-
-    def test_a_move_to_a_coprocessor_reads_as_one(self) -> None:
-        found = self.only(0xEE213114)
-
-        self.assertEqual((found.mnemonic, found.text), ("mcr", "mcr p1, 1, R3, c1, c4, 0"))
-
-    def test_a_move_from_a_coprocessor_reads_as_one(self) -> None:
-        found = self.only(0xEE313114)
-
-        self.assertEqual(found.mnemonic, "mrc")
-
-
-class OutsideTheFigureTest(Fixture):
-    def test_the_row_the_figure_marks_undefined_reads_as_itself(self) -> None:
-        found = self.only(0xE6000010)
-
+        # Assert
         self.assertEqual(
-            (found.kind, found.mnemonic, found.text),
-            (decode.UNDEFINED, "undefined", "undefined 0xE6000010"),
+            [one.text.split()[0] for one in found],
+            [
+                *("beq", "bne", "bcs", "bcc", "bmi", "bpl", "bvs", "bvc"),
+                *("bhi", "bls", "bge", "blt", "bgt", "ble", "b", "bnv"),
+            ],
         )
 
-    def test_an_encoding_outside_the_figure_is_shown_rather_than_refused(self) -> None:
-        found = self.only(0x000000D0)
+    def test_every_row_of_the_figure_has_a_kind(self) -> None:
+        # Arrange
+        data = image(
+            *(0xE0000291, 0xE1021093, 0xE5100000, 0xE6000010, 0xE8100001, 0xEA000000),
+            *(0xED910102, 0xEE123104, 0xEE313114, 0xEF123456, 0xE1A00000),
+        )
 
-        self.assertEqual((found.kind, found.mnemonic), (decode.UNSPECIFIED, "unspecified"))
+        # Act
+        found = arm6.disassemble(data)
 
-
-class ConditionSpellingTest(Fixture):
-    def test_a_condition_follows_the_operation_rather_than_the_suffix(self) -> None:
-        found = self.only(0x15DB0020)
-
-        self.assertEqual((found.mnemonic, found.text), ("ldrb", "ldrneb R0, [R11, #0x20]"))
-
-    def test_a_transfer_with_no_suffix_takes_the_condition_at_the_end(self) -> None:
-        found = self.only(0x15910000)
-
-        self.assertEqual(found.text, "ldrne R0, [R1]")
-
-    def test_a_flag_setting_suffix_stays_where_it_is(self) -> None:
-        found = self.only(0x12100001)
-
-        self.assertEqual(found.text, "andnes R0, R0, #0x1")
+        # Assert
+        self.assertEqual({one.kind for one in found}, FIGURE_28_ROWS)
 
 
 class WalkTest(unittest.TestCase):
-    def test_a_walk_returns_every_instruction_in_order(self) -> None:
-        found = disassembly.disassemble(image(0xE3A08000, 0xE3A09181, 0xE5098000), address=0x100)
+    def test_a_walk_returns_every_instruction_in_order_past_a_return(self) -> None:
+        # Arrange
+        data = image(0xE3A08000, 0xE1A0F00E, 0xE5098000)
 
+        # Act
+        found = arm6.disassemble(data, address=0x100)
+
+        # Assert
         self.assertEqual([one.address for one in found], [0x100, 0x104, 0x108])
 
     def test_a_walk_stops_at_the_count_it_was_given(self) -> None:
-        found = disassembly.disassemble(image(0xE3A08000, 0xE3A09181), count=1)
+        # Arrange
+        data = image(0xE3A08000, MOVE)
 
+        # Act
+        found = arm6.disassemble(data, count=1)
+
+        # Assert
         self.assertEqual(len(found), 1)
 
     def test_a_walk_stops_when_the_image_runs_out(self) -> None:
-        found = disassembly.disassemble(image(0xE3A08000) + b"\x00\x00")
+        # Arrange
+        data = image(0xE3A08000) + b"\x00\x00"
 
+        # Act
+        found = arm6.disassemble(data)
+
+        # Assert
         self.assertEqual(len(found), 1)
 
-    def test_a_walk_can_stop_where_a_routine_returns(self) -> None:
-        found = disassembly.disassemble(
-            image(0xE3A08000, 0xE1A0F00E, 0xE3A09181), stop_at_return=True
-        )
 
-        self.assertEqual(len(found), 2)
-
-    def test_a_walk_that_is_not_asked_to_stop_carries_on_past_a_return(self) -> None:
-        found = disassembly.disassemble(image(0xE1A0F00E, 0xE3A09181))
-
-        self.assertEqual(len(found), 2)
-
-
-class ReturnTest(Fixture):
+class ReturnTest(unittest.TestCase):
     def test_moving_the_link_register_into_the_counter_is_a_return(self) -> None:
-        self.assertTrue(disassembly.returns(self.only(0xE1A0F00E)))
+        # Arrange
+        data = image(0xE3A08000, 0xE1A0F00E, MOVE)
+
+        # Act
+        found = arm6.disassemble(data, stop_at_return=True)
+
+        # Assert
+        self.assertEqual(len(found), 2)
 
     def test_loading_the_counter_off_the_stack_is_a_return(self) -> None:
-        self.assertTrue(disassembly.returns(self.only(0xE8BD8300)))
+        # Arrange
+        data = image(0xE8BD8300, MOVE)
 
-    def test_a_load_that_leaves_the_counter_alone_is_not_a_return(self) -> None:
-        self.assertFalse(disassembly.returns(self.only(0xE8BD0300)))
+        # Act
+        found = arm6.disassemble(data, stop_at_return=True)
 
-    def test_a_store_that_names_the_counter_is_not_a_return(self) -> None:
-        self.assertFalse(disassembly.returns(self.only(0xE92D8300)))
+        # Assert
+        self.assertEqual(len(found), 1)
 
-    def test_moving_something_else_into_the_counter_is_not_a_return(self) -> None:
-        self.assertFalse(disassembly.returns(self.only(0xE1A0F000)))
+    def test_nothing_else_is_taken_for_a_return(self) -> None:
+        # Arrange
+        data = image(0xE8BD0300, 0xE92D8300, 0xE1A0F000, 0xE1A0000E, BRANCH, 0xE3A0F00E, MOVE)
 
-    def test_moving_the_link_register_somewhere_else_is_not_a_return(self) -> None:
-        self.assertFalse(disassembly.returns(self.only(0xE1A0000E)))
+        # Act
+        found = arm6.disassemble(data, stop_at_return=True)
 
-    def test_an_instruction_of_another_kind_is_not_a_return(self) -> None:
-        self.assertFalse(disassembly.returns(self.only(0xEA000000)))
-
-
-class AgainstTheDatasheetTest(unittest.TestCase):
-    def test_every_condition_the_datasheet_numbers_renders(self) -> None:
-        rendered = [
-            disassembly.decode(image((code << 28) | 0x0A000000)).text.split()[0]
-            for code in range(16)
-        ]
-
-        self.assertEqual(rendered[:3] + rendered[14:], ["beq", "bne", "bcs", "b", "bnv"])
-
-    def test_every_row_of_the_figure_has_a_mnemonic(self) -> None:
-        words = (
-            0xE0000291,
-            0xE1021093,
-            0xE5100000,
-            0xE6000010,
-            0xE8100001,
-            0xEA000000,
-            0xED910102,
-            0xEE123104,
-            0xEE313114,
-            0xEF123456,
-            0xE1A00000,
-        )
-
-        found = {disassembly.decode(image(word)).kind for word in words}
-
-        self.assertEqual(found, set(decode.KINDS))
+        # Assert
+        self.assertEqual(len(found), 7)
 
 
 if __name__ == "__main__":

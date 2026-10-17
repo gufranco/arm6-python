@@ -11,7 +11,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Callable, Sequence
 
 
-def _version(where: Path | None = None) -> str:
+def installed_version(where: Path | None = None) -> str:
     found = re.search(
         r"""VERSION\s*[:=][^"']*["']([^"']+)["']""",
         (where or Path(__file__).resolve().parent / "version.py").read_text(),
@@ -22,7 +22,7 @@ def _version(where: Path | None = None) -> str:
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def _reachable(root: Path = ROOT, path: list[str] | None = None) -> bool:
+def reachable(root: Path = ROOT, path: list[str] | None = None) -> bool:
     where = sys.path if path is None else path
     if str(root) in where:
         return False
@@ -30,11 +30,11 @@ def _reachable(root: Path = ROOT, path: list[str] | None = None) -> bool:
     return True
 
 
-_reachable()
+reachable()
 
 from arm6 import environment  # noqa: E402
 
-VERSION = _version()
+VERSION = installed_version()
 
 DOCUMENTS = ROOT / "docs" / "manufacturer"
 
@@ -72,7 +72,7 @@ class Finding:
         return f"<Finding {self.name} {'ok' if self.ok else 'not ok'}>"
 
 
-def _python() -> Finding:
+def check_python() -> Finding:
     return Finding(
         "python",
         sys.version_info[:2] >= OLDEST_PYTHON,
@@ -81,11 +81,11 @@ def _python() -> Finding:
     )
 
 
-def _package() -> Finding:
+def check_package() -> Finding:
     return Finding("package", True, f"arm6 {VERSION}")
 
 
-def _default_build(name: str) -> Any:
+def default_build(name: str) -> Any:
     if str(ROOT) not in sys.path:
         sys.path.insert(0, str(ROOT))
     from arm6.core import Cpu
@@ -93,7 +93,7 @@ def _default_build(name: str) -> Any:
     return Cpu(name, fill=0)
 
 
-def _processor(name: str, build: Callable[[str], Any] = _default_build) -> Finding:
+def check_processor(name: str, build: Callable[[str], Any] = default_build) -> Finding:
     try:
         core = build(name)
         core.reset()
@@ -114,7 +114,7 @@ def _processor(name: str, build: Callable[[str], Any] = _default_build) -> Findi
     )
 
 
-def _documents(where: Path = DOCUMENTS) -> Finding:
+def check_documents(where: Path = DOCUMENTS) -> Finding:
     if not where.is_dir():
         return Finding(
             "documents",
@@ -126,7 +126,7 @@ def _documents(where: Path = DOCUMENTS) -> Finding:
     return Finding("documents", True, f"{len(held)} in {where}: {', '.join(held) or 'none'}")
 
 
-def _recogniser(which: Callable[[str], str | None] = shutil.which) -> Finding:
+def check_recogniser(which: Callable[[str], str | None] = shutil.which) -> Finding:
     absent = [one for one in READERS if which(one) is None]
     if absent:
         return Finding(
@@ -139,10 +139,10 @@ def _recogniser(which: Callable[[str], str | None] = shutil.which) -> Finding:
 
 
 def examine() -> list[Finding]:
-    found = [_python(), _package()]
-    found.append(_processor("arm60"))
-    found.append(_documents())
-    found.append(_recogniser())
+    found = [check_python(), check_package()]
+    found.append(check_processor("arm60"))
+    found.append(check_documents())
+    found.append(check_recogniser())
     return found
 
 

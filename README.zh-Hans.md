@@ -8,7 +8,7 @@
 [![Release](https://img.shields.io/github/v/release/gufranco/arm6-python)](https://github.com/gufranco/arm6-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-已比对 **424,220** 个录制用例，**0** 处不一致，**62** 句引文已定位到所引用的页面，**1** 个器件，**1,158** 个测试，**100%** 语句与分支覆盖率，无依赖
+已比对 **424,220** 个录制用例，**0** 处不一致，**62** 句引文已定位到所引用的页面，**1** 个器件，**1,087** 个测试，**100%** 语句与分支覆盖率，无依赖
 
 ```python
 from arm6 import Cpu, Memory
@@ -88,7 +88,7 @@ python3 arm6/doctor.py
 | `steps` | 自上次复位以来的指令数 |
 | `spent` | 上一条指令的开销，类型为 `Cycles` |
 | `tally` | 累计总数，类型为 `Cycles`，跨复位保留 |
-| `bus.cycles` | 上一条指令的每个总线周期对应一个 `Cycle`：`kind`、`address`、`nopc`、`nbw`、`nrw`、`ntrans`、`lock`、`data` |
+| `bus.cycles` | 上一条指令的每个总线周期对应一个 `Cycle`：`kind`、`address`、`nopc`、`nbw`、`nrw`、`ntrans`、`lock`、`data`。`kind` 是未接协处理器的器件所驱动的表 3 周期类型之一：N、S 或 I，带有 `letter`、`name`、`nmreq`、`seq` 和 `touches_memory` |
 | `irq_line`, `fiq_line` | 每条中断线的电平 |
 | `on_cycle` | 在每个总线周期之后以器件为参数运行的可调用对象，或 `None`。由 `Clock` 设置 |
 | `seed`, `bigend`, `lateabt` | 构造函数参数 |

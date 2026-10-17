@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING
 
 from arm6 import psr
 from arm6.bus import INTERNAL, NONSEQUENTIAL, SEQUENTIAL
@@ -49,10 +49,6 @@ class Outcome:
         object.__setattr__(self, "v", v)
         object.__setattr__(self, "touches_v", touches_v)
         object.__setattr__(self, "writes", writes)
-
-    @override
-    def __setattr__(self, name: str, value: object) -> None:
-        raise AttributeError("an ALU outcome is a measurement and does not change")
 
 
 def booth_cycles(multiplier: int) -> int:

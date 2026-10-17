@@ -8,12 +8,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from arm6 import decode, psr  # noqa: E402
-from arm6.clock import Clock  # noqa: E402
-from arm6.core import Cpu  # noqa: E402
-from arm6.memory import Memory  # noqa: E402
-from arm6.tally import Cycles, Waits  # noqa: E402
-from arm6.transfers import UnspecifiedEncoding  # noqa: E402
+from arm6 import (  # noqa: E402
+    MODES,
+    Clock,
+    Cpu,
+    Cycles,
+    Memory,
+    UnspecifiedEncoding,
+    Waits,
+    disassemble,
+)
 from conformance.printed import quote, value  # noqa: E402
 
 MOV_R1_5 = 0xE3A01005
@@ -40,6 +44,8 @@ AND_WITH_REGISTER_SHIFT = 0xE0000211
 ADD_WITH_REGISTER_SHIFT = 0xE0812013
 LONG_MULTIPLY = 0xE0812394
 BIT_SEVEN = 1 << 7
+CARRY = 1 << 29
+MODE_FIELD = 0b11111
 DATA = 0x2000
 LONG_WAIT = 10**12
 
@@ -51,17 +57,18 @@ def machine(*words: int, bigend: bool = False) -> Cpu:
     return held
 
 
-def registers_of(cpu: Cpu) -> tuple[object, ...]:
+def seen_in(cpu: Cpu, bits: int) -> tuple[object, ...]:
     held = cpu.registers
-    return (
-        tuple(held.common),
-        tuple(held.low),
-        tuple(held.fiq_low),
-        tuple(tuple(one) for one in held.banked.values()),
-        held.pc,
-        held.cpsr,
-        tuple(held.spsr.values()),
-    )
+    current = held.cpsr
+    held.cpsr = (current & ~MODE_FIELD) | bits
+    seen = (tuple(held.read(index) for index in range(15)), held.saved())
+    held.cpsr = current
+    return seen
+
+
+def registers_of(cpu: Cpu) -> tuple[object, ...]:
+    banks = tuple(seen_in(cpu, mode.bits) for mode in MODES.values() if mode.wide)
+    return (banks, cpu.registers.pc, cpu.registers.cpsr)
 
 
 def stopped_after_every_cycle(cpu: Cpu, cycles: int) -> tuple[object, ...]:
@@ -74,9 +81,9 @@ def carry_after_a_multiply(multiplicand: int, multiplier: int) -> bool:
     held = machine(MULS_R0_R1_R2)
     held.registers.write(1, multiplicand)
     held.registers.write(2, multiplier)
-    held.registers.cpsr = psr.with_flag(held.registers.cpsr, psr.C_BIT, True)
+    held.registers.cpsr = held.registers.cpsr | CARRY
     held.step()
-    return psr.flag(held.registers.cpsr, psr.C_BIT)
+    return bool(held.registers.cpsr & CARRY)
 
 
 def every_row_of(cpu: Cpu, steps: int) -> list[tuple[str, int]]:
@@ -275,19 +282,16 @@ class TheTransfersTest(unittest.TestCase):
 class TheStatusRegisterTest(unittest.TestCase):
     def test_changing_only_the_flags_preserves_the_reserved_bits(self) -> None:
         # Arrange
+        reserved = int(value("reservedBits"), 16)
         held = machine(WRITE_FLAGS_FROM_R0)
-        held.registers.cpsr = held.registers.cpsr | psr.RESERVED_MASK
+        held.registers.cpsr = held.registers.cpsr | reserved
         held.registers.write(0, 0xF0000000)
 
         # Act
         held.step()
 
         # Assert
-        self.assertEqual(
-            held.registers.cpsr & psr.RESERVED_MASK,
-            psr.RESERVED_MASK,
-            quote("reservedBitsPreserved"),
-        )
+        self.assertEqual(held.registers.cpsr & reserved, reserved, quote("reservedBitsPreserved"))
 
 
 class TheEncodingsTest(unittest.TestCase):
@@ -298,10 +302,10 @@ class TheEncodingsTest(unittest.TestCase):
         words = (AND_WITH_REGISTER_SHIFT, ADD_WITH_REGISTER_SHIFT)
 
         # Act
-        rows = [decode.classify(word | BIT_SEVEN) for word in words]
+        rows = [disassemble((word | BIT_SEVEN).to_bytes(4, "little"))[0].kind for word in words]
 
         # Assert
-        self.assertEqual(rows, [decode.MULTIPLY, decode.UNSPECIFIED], quote("shiftBitSeven"))
+        self.assertEqual(rows, ["multiply", "unspecified"], quote("shiftBitSeven"))
 
     def test_a_restriction_no_document_here_answers_is_referred_to_the_arm2as(self) -> None:
         # Arrange

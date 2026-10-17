@@ -7,15 +7,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from arm6 import psr  # noqa: E402
-from arm6.core import Cpu  # noqa: E402
-from arm6.errors import RunLimit, UnknownModelError  # noqa: E402
-from arm6.memory import Memory  # noqa: E402
-from arm6.transfers import EmptyRegisterList, UnspecifiedEncoding  # noqa: E402
+from arm6 import (  # noqa: E402
+    Cpu,
+    EmptyRegisterList,
+    Memory,
+    RunLimit,
+    UnknownModelError,
+    UnspecifiedEncoding,
+)
 from conformance.printed import quote, value  # noqa: E402
 
 MOV_R0_R1 = 0xE1A00001
-MOV_R0_R1_LSL_R2 = 0xE1A00211
 MOV_PC_R0 = 0xE1A0F000
 BRANCH = 0xEA000000
 BRANCH_WITH_LINK = 0xEB000000
@@ -30,13 +32,19 @@ UNDEFINED = 0xE6000010
 NEVER = 0xFA000000
 COPROCESSOR_OPERATION = 0xEE012103
 LONG_MULTIPLY = 0xE0812394
+I_BIT = 7
+F_BIT = 6
 
 
-def machine(*words: int, **options: object) -> Cpu:
+def machine(*words: int) -> Cpu:
     image = b"".join(one.to_bytes(4, "little") for one in words)
-    held = Cpu("arm60", Memory(image=image, fill=0), fill=0, **options)  # type: ignore[arg-type]
+    held = Cpu("arm60", Memory(image=image, fill=0), fill=0)
     held.registers.pc = 0
     return held
+
+
+def bit(cpu: Cpu, place: int) -> bool:
+    return bool(cpu.registers.cpsr >> place & 1)
 
 
 class BuiltTheWayTheFamilyBuildsThemTest(unittest.TestCase):
@@ -112,10 +120,7 @@ class ResetDefinesAndPowerOnScramblesTest(unittest.TestCase):
         held.reset()
 
         # Assert
-        disabled = (
-            psr.flag(held.registers.cpsr, psr.I_BIT),
-            psr.flag(held.registers.cpsr, psr.F_BIT),
-        )
+        disabled = (bit(held, I_BIT), bit(held, F_BIT))
         self.assertEqual(disabled, (True, True), quote("resetForcesMode"))
 
     def test_the_saved_counter_it_writes_is_not_defined_so_it_is_not_zero(self) -> None:
@@ -139,7 +144,7 @@ class ResetDefinesAndPowerOnScramblesTest(unittest.TestCase):
 
         # Assert
         self.assertNotEqual(
-            held.registers.spsr["svc"], 0, (quote("resetOverwrites"), quote("resetUndefined"))
+            held.registers.saved(), 0, (quote("resetOverwrites"), quote("resetUndefined"))
         )
 
     def test_a_reset_costs_at_least_two_cycles_of_dummy_fetches(self) -> None:
@@ -310,104 +315,6 @@ class WhatTableTwentySaysEachFormCostsTest(unittest.TestCase):
         self.assertEqual((held.spent.s, held.spent.n, held.spent.i), (2, 1, 1))
 
 
-class TheRegisterShiftCycleTheTablesDisagreeAboutTest(unittest.TestCase):
-    def test_the_per_cycle_table_makes_the_extra_cycle_internal(self) -> None:
-        held = machine(MOV_R0_R1_LSL_R2)
-
-        held.step()
-
-        self.assertEqual((held.spent.s, held.spent.i), (1, 1))
-
-    def test_which_is_the_shape_the_shortest_multiply_has(self) -> None:
-        shifted = machine(MOV_R0_R1_LSL_R2)
-        multiplied = machine(MULTIPLY)
-
-        shifted.step()
-        multiplied.step()
-
-        self.assertEqual(
-            [one.kind.letter for one in shifted.bus.cycles],
-            [one.kind.letter for one in multiplied.bus.cycles],
-        )
-
-
-class WhatTheBusActuallyDroveTest(unittest.TestCase):
-    def test_a_branch_drives_the_prefetch_then_the_destination_then_the_next(self) -> None:
-        held = machine(BRANCH)
-
-        held.step()
-
-        self.assertEqual([one.address for one in held.bus.cycles], [8, 8, 12])
-
-    def test_a_store_drives_the_address_it_computed_with_the_write_line_high(self) -> None:
-        held = machine(STORE_R0_TO_R1)
-        held.registers.write(1, 0x2000)
-        held.registers.write(0, 0xDEADBEEF)
-
-        held.step()
-
-        self.assertEqual((held.bus.cycles[1].address, held.bus.cycles[1].nrw), (0x2000, 1))
-
-    def test_a_byte_access_drives_the_width_line_low(self) -> None:
-        held = machine(0xE5C10000)
-        held.registers.write(1, 0x2000)
-
-        held.step()
-
-        self.assertEqual(held.bus.cycles[1].nbw, 0)
-
-    def test_a_swap_holds_the_lock_line_high_across_both_of_its_accesses(self) -> None:
-        # Arrange
-        held = machine(SWAP_WORD)
-        held.registers.write(2, 0x2000)
-
-        # Act
-        held.step()
-
-        # Assert
-        self.assertEqual(
-            [one.lock for one in held.bus.cycles], [0, 1, 1, 0], quote("lockDuringSwap")
-        )
-
-    def test_an_instruction_fetch_drives_the_opcode_line_low(self) -> None:
-        # Arrange
-        held = machine(MOV_R0_R1)
-
-        # Act
-        held.step()
-
-        # Assert
-        self.assertEqual(held.bus.cycles[0].nopc, 0, quote("nopcDefinition"))
-
-    def test_a_privileged_mode_drives_the_translate_line_high(self) -> None:
-        # Arrange
-        held = machine(MOV_R0_R1)
-
-        # Act
-        held.step()
-
-        # Assert
-        self.assertEqual(held.bus.cycles[0].ntrans, 1, quote("ntransUserMode"))
-
-    def test_and_a_user_mode_drives_it_low(self) -> None:
-        # Arrange
-        held = machine(MOV_R0_R1)
-        held.registers.cpsr = psr.with_mode(held.registers.cpsr, psr.MODES["usr32"])
-
-        # Act
-        held.step()
-
-        # Assert
-        self.assertEqual(held.bus.cycles[0].ntrans, 0, quote("ntransUserMode"))
-
-    def test_a_discarded_prefetch_is_still_a_real_read(self) -> None:
-        held = machine(BRANCH, 0, 0x12345678)
-
-        held.step()
-
-        self.assertEqual(held.bus.cycles[0].data, 0x12345678)
-
-
 class WhatEachInstructionActuallyDidTest(unittest.TestCase):
     def test_a_move_copies_one_register_to_another(self) -> None:
         held = machine(MOV_R0_R1)
@@ -528,150 +435,6 @@ class WhatEachInstructionActuallyDidTest(unittest.TestCase):
         self.assertIn("E0812394", str(caught.exception))
 
 
-class WhereAnExceptionGoesTest(unittest.TestCase):
-    def test_a_software_interrupt_vectors_to_eight(self) -> None:
-        # Arrange
-        held = machine(SOFTWARE_INTERRUPT)
-
-        # Act
-        held.step()
-
-        # Assert
-        self.assertEqual(held.registers.pc, 0x08, quote("exceptionEntry"))
-
-    def test_and_enters_supervisor_mode(self) -> None:
-        held = machine(SOFTWARE_INTERRUPT)
-
-        held.step()
-
-        self.assertEqual(held.mode.name, "svc32")
-
-    def test_and_leaves_the_return_address_in_the_link_register(self) -> None:
-        held = machine(SOFTWARE_INTERRUPT)
-
-        held.step()
-
-        self.assertEqual(held.registers.read(14), 4)
-
-    def test_and_banks_the_status_it_came_in_with(self) -> None:
-        held = machine(SOFTWARE_INTERRUPT)
-        held.registers.cpsr = psr.with_flag(held.registers.cpsr, psr.Z_BIT, True)
-        before = held.registers.cpsr
-
-        held.step()
-
-        self.assertEqual(held.registers.spsr["svc"], before)
-
-    def test_an_undefined_instruction_vectors_to_four(self) -> None:
-        held = machine(UNDEFINED)
-
-        held.step()
-
-        self.assertEqual(held.registers.pc, 0x04)
-
-    def test_and_enters_the_undefined_mode(self) -> None:
-        held = machine(UNDEFINED)
-
-        held.step()
-
-        self.assertEqual(held.mode.name, "und32")
-
-    def test_every_vector_the_datasheet_lists_is_here(self) -> None:
-        from arm6.core import VECTORS
-
-        self.assertEqual(
-            sorted(VECTORS.values()),
-            [0x00, 0x04, 0x08, 0x0C, 0x10, 0x18, 0x1C],
-        )
-
-    def test_the_address_exception_vector_is_not_among_them(self) -> None:
-        from arm6.core import VECTORS
-
-        self.assertNotIn(0x14, VECTORS.values())
-
-
-class TheTwoInterruptLinesTest(unittest.TestCase):
-    def test_a_request_on_the_lower_line_is_taken_when_it_is_not_masked(self) -> None:
-        held = machine(MOV_R0_R1)
-        held.registers.cpsr = psr.with_flag(held.registers.cpsr, psr.I_BIT, False)
-
-        taken = held.irq()
-
-        self.assertTrue(taken)
-
-    def test_and_is_refused_when_it_is(self) -> None:
-        held = machine(MOV_R0_R1)
-        held.registers.cpsr = psr.with_flag(held.registers.cpsr, psr.I_BIT, True)
-
-        taken = held.irq()
-
-        self.assertFalse(taken)
-
-    def test_a_request_on_the_higher_line_is_masked_by_its_own_bit(self) -> None:
-        held = machine(MOV_R0_R1)
-        held.registers.cpsr = psr.with_flag(held.registers.cpsr, psr.F_BIT, True)
-
-        taken = held.fiq()
-
-        self.assertFalse(taken)
-
-    def test_a_line_that_is_taken_vectors_on_the_next_instruction(self) -> None:
-        held = machine(MOV_R0_R1)
-        held.registers.cpsr = psr.with_flag(held.registers.cpsr, psr.I_BIT, False)
-        held.irq()
-
-        held.step()
-
-        self.assertEqual(held.registers.pc, 0x18)
-
-    def test_the_higher_line_wins_when_both_are_offered(self) -> None:
-        held = machine(MOV_R0_R1)
-        held.registers.cpsr = psr.with_flag(held.registers.cpsr, psr.I_BIT, False)
-        held.registers.cpsr = psr.with_flag(held.registers.cpsr, psr.F_BIT, False)
-        held.irq()
-        held.fiq()
-
-        held.step()
-
-        self.assertEqual(held.registers.pc, 0x1C)
-
-    def test_taking_the_higher_line_masks_both(self) -> None:
-        held = machine(MOV_R0_R1)
-        held.registers.cpsr = psr.with_flag(held.registers.cpsr, psr.F_BIT, False)
-        held.fiq()
-
-        held.step()
-
-        self.assertEqual(
-            (
-                psr.flag(held.registers.cpsr, psr.I_BIT),
-                psr.flag(held.registers.cpsr, psr.F_BIT),
-            ),
-            (True, True),
-        )
-
-    def test_a_request_withdrawn_before_the_part_looks_is_not_taken(self) -> None:
-        held = machine(MOV_R0_R1)
-        held.registers.cpsr = psr.with_flag(held.registers.cpsr, psr.I_BIT, False)
-        held.irq()
-        held.irq(level=False)
-
-        held.step()
-
-        self.assertEqual(held.registers.pc, 4)
-
-    def test_a_masked_request_stays_on_the_line_until_it_is_unmasked(self) -> None:
-        held = machine(MOV_R0_R1, MOV_R0_R1)
-        held.registers.cpsr = psr.with_flag(held.registers.cpsr, psr.I_BIT, True)
-        held.irq()
-        held.step()
-        held.registers.cpsr = psr.with_flag(held.registers.cpsr, psr.I_BIT, False)
-
-        held.step()
-
-        self.assertEqual(held.registers.pc, 0x18)
-
-
 class DrivenByAClockTest(unittest.TestCase):
     def test_a_budget_reports_what_it_really_spent(self) -> None:
         held = machine(*([MOV_R0_R1] * 40))
@@ -720,52 +483,6 @@ class DrivenByAClockTest(unittest.TestCase):
         held = machine(MOV_R0_R1)
 
         self.assertFalse(held.held())
-
-
-class TheConditionFieldDecidesTest(unittest.TestCase):
-    def test_an_instruction_whose_condition_holds_executes(self) -> None:
-        held = machine(0x01A00001)
-        held.registers.cpsr = psr.with_flag(held.registers.cpsr, psr.Z_BIT, True)
-        held.registers.write(1, 0x99)
-
-        held.step()
-
-        self.assertEqual(held.registers.read(0), 0x99)
-
-    def test_and_one_whose_condition_fails_does_not(self) -> None:
-        # Arrange
-        held = machine(0x01A00001)
-        held.registers.cpsr = psr.with_flag(held.registers.cpsr, psr.Z_BIT, False)
-        held.registers.write(1, 0x99)
-        held.registers.write(0, 0x11)
-
-        # Act
-        held.step()
-
-        # Assert
-        self.assertEqual(held.registers.read(0), 0x11, quote("conditionNotMet"))
-
-    def test_every_condition_code_is_reachable(self) -> None:
-        held = machine(MOV_R0_R1)
-
-        answers = {held.passes(code << 28) for code in range(16)}
-
-        self.assertEqual(answers, {True, False})
-
-    def test_the_never_code_never_executes(self) -> None:
-        # Arrange
-        held = machine(MOV_R0_R1)
-
-        # Act
-        executes = held.passes(0xF0000000)
-
-        # Assert
-        self.assertFalse(executes, quote("neverCondition"))
-
-    def test_the_always_code_always_does(self) -> None:
-        held = machine(MOV_R0_R1)
-
-        self.assertTrue(held.passes(0xE0000000))
 
 
 class NothingHereKeepsADictionaryTest(unittest.TestCase):

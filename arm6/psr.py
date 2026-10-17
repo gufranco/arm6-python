@@ -13,17 +13,6 @@ F_BIT = 6
 
 MODE_MASK = 0b11111
 
-RESERVED_MASK = 0x0FFFFF20
-
-DEFINED_MASK = (1 << N_BIT) | (1 << Z_BIT) | (1 << C_BIT) | (1 << V_BIT)
-DEFINED_MASK |= (1 << I_BIT) | (1 << F_BIT) | MODE_MASK
-"""N, Z, C, V, I, F and M[4:0]: the eleven bits section 7.4.2 says are defined.
-
-Together with the reserved mask this is the whole word and the two do not
-overlap, which is checked rather than asserted. A partition that fails would mean
-one of the two masks had drifted from the sentence it came from.
-"""
-
 
 class UnknownMode(Arm6Error):
     __slots__ = ()

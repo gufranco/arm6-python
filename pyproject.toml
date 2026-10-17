@@ -78,7 +78,7 @@ ignore = [
 "arm6/doctor.py" = ["BLE001", "T201"]
 
 [tool.coverage.run]
-source = ["arm6", "conformance"]
+source = ["."]
 branch = true
 
 [tool.coverage.report]
@@ -126,3 +126,8 @@ enable_error_code = [
   "unused-awaitable",
 ]
 files = ["arm6", "conformance"]
+
+[[tool.mypy.overrides]]
+module = ["setuptools.*"]
+follow_imports = "skip"
+ignore_missing_imports = true

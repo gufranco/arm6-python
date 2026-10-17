@@ -9,13 +9,6 @@ LSR = 1
 ASR = 2
 ROR = 3
 
-CODES = (LSL, LSR, ASR, ROR)
-
-
-def _check(code: int) -> None:
-    if code not in CODES:
-        raise ValueError(f"shift code {code} is not one of the two bit field's four values")
-
 
 def _bit(value: int, place: int) -> bool:
     return bool(value >> place & 1)
@@ -42,7 +35,6 @@ def _between_one_and_thirty_one(code: int, value: int, amount: int) -> tuple[int
 
 
 def by_amount(code: int, value: int, amount: int, carry: bool) -> tuple[int, bool]:
-    _check(code)
     value &= WORD_MASK
     if amount != 0:
         return _between_one_and_thirty_one(code, value, amount)
@@ -56,7 +48,6 @@ def by_amount(code: int, value: int, amount: int, carry: bool) -> tuple[int, boo
 
 
 def by_register(code: int, value: int, amount: int, carry: bool) -> tuple[int, bool]:
-    _check(code)
     value &= WORD_MASK
     amount &= 0xFF
     if amount == 0:

@@ -7,156 +7,262 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from arm6 import psr, transfers  # noqa: E402
-from arm6.core import Cpu  # noqa: E402
-from arm6.memory import Memory  # noqa: E402
+import arm6  # noqa: E402
 from conformance.printed import quote, value  # noqa: E402
+
+MODE_FIELD = 0b11111
+
+BRANCH = 0xEA000000
+
+LOAD_R0_FROM_R1 = 0xE5910000
+
+UNALIGNED_WORD = 0x11223344
+
+
+def at(address: int, word: int) -> arm6.Cpu:
+    held = arm6.Cpu("arm60", arm6.Memory(fill=0), fill=0)
+    held.memory.write_word(address, word)
+    held.registers.pc = address
+    return held
+
+
+def in_mode(cpu: arm6.Cpu, name: str) -> None:
+    cpu.registers.cpsr = cpu.registers.cpsr & ~MODE_FIELD | arm6.MODES[name].bits
+
+
+def loading(base: int, word: int = LOAD_R0_FROM_R1) -> arm6.Cpu:
+    held = at(0, word)
+    held.registers.write(1, base)
+    return held
 
 
 class TheBranchOffsetTest(unittest.TestCase):
     def test_a_forward_branch_lands_past_the_prefetch(self) -> None:
         # Arrange
-        word = 0xEA000000
+        cpu = at(0x1000, BRANCH)
 
         # Act
-        held = transfers.branch_target(0x1000, word)
+        cpu.step()
 
         # Assert
-        self.assertEqual(held, 0x1008, quote("branchPrefetch"))
+        self.assertEqual(cpu.registers.pc, 0x1008, quote("branchPrefetch"))
 
     def test_the_offset_is_shifted_left_two_bits(self) -> None:
         # Arrange
-        word = 0xEA000001
+        cpu = at(0x1000, BRANCH | 1)
 
         # Act
-        held = transfers.branch_target(0x1000, word)
+        cpu.step()
 
         # Assert
-        self.assertEqual(held, 0x100C, quote("branchOffset"))
+        self.assertEqual(cpu.registers.pc, 0x100C, quote("branchOffset"))
 
     def test_a_backward_branch_sign_extends_the_offset(self) -> None:
         # Arrange
-        word = 0xEAFFFFFF
+        cpu = at(0x1000, BRANCH | 0xFFFFFF)
 
         # Act
-        held = transfers.branch_target(0x1000, word)
+        cpu.step()
 
         # Assert
-        self.assertEqual(held, 0x1004, quote("branchOffset"))
+        self.assertEqual(cpu.registers.pc, 0x1004, quote("branchOffset"))
 
     def test_the_furthest_branch_back_is_thirty_two_megabytes(self) -> None:
-        held = transfers.branch_target(0x4000000, 0xEA800000)
+        # Arrange
+        cpu = at(0x4000000, BRANCH | 0x800000)
 
-        self.assertEqual(held, 0x2000008)
+        # Act
+        cpu.step()
+
+        # Assert
+        self.assertEqual(cpu.registers.pc, 0x2000008)
 
     def test_the_furthest_branch_forward_is_thirty_two_megabytes(self) -> None:
-        held = transfers.branch_target(0, 0xEA7FFFFF)
+        # Arrange
+        cpu = at(0, BRANCH | 0x7FFFFF)
 
-        self.assertEqual(held, 0x01FFFFFC + 8)
+        # Act
+        cpu.step()
+
+        # Assert
+        self.assertEqual(cpu.registers.pc, 0x02000004)
 
     def test_a_target_past_the_top_of_the_bus_wraps(self) -> None:
-        held = transfers.branch_target(0xFFFFFFF0, 0xEA000010)
+        # Arrange
+        cpu = at(0xFFFFFFF0, BRANCH | 0x10)
 
-        self.assertEqual(held, 0x00000038)
+        # Act
+        cpu.step()
+
+        # Assert
+        self.assertEqual(cpu.registers.pc, 0x00000038)
 
 
 class TheRegisterListTest(unittest.TestCase):
     def test_the_lowest_register_comes_first(self) -> None:
-        held = transfers.registers_in(0b0000_0000_0000_1011)
+        # Arrange
+        cpu = at(0, 0xE894000B)
+        cpu.registers.write(4, 0x2000)
+        for offset, word in enumerate((0xA, 0xB, 0xC)):
+            cpu.memory.write_word(0x2000 + offset * 4, word)
 
-        self.assertEqual(held, (0, 1, 3))
+        # Act
+        cpu.step()
+
+        # Assert
+        self.assertEqual([cpu.registers.read(one) for one in (0, 1, 3)], [0xA, 0xB, 0xC])
 
     def test_the_counter_is_always_last_when_it_is_in_the_list(self) -> None:
-        held = transfers.registers_in(0b1000_0000_0000_0001)
+        # Arrange
+        cpu = loading(0x2000, 0xE8918001)
+        cpu.memory.write_word(0x2000, 0x11)
+        cpu.memory.write_word(0x2004, 0x40)
 
-        self.assertEqual(held, (0, 15))
+        # Act
+        cpu.step()
+
+        # Assert
+        self.assertEqual((cpu.registers.read(0), cpu.registers.pc), (0x11, 0x40))
 
     def test_every_register_can_be_named_at_once(self) -> None:
-        held = transfers.registers_in(0xFFFF)
+        # Arrange
+        cpu = at(0, 0xE880FFFF)
+        cpu.registers.write(0, 0x2000)
+        for one in range(1, 15):
+            cpu.registers.write(one, 0x100 + one)
 
-        self.assertEqual(held, tuple(range(16)))
+        # Act
+        cpu.step()
+
+        # Assert
+        self.assertEqual(
+            [cpu.memory.read_word(0x2000 + one * 4) for one in range(16)],
+            [0x2000, *(0x100 + one for one in range(1, 15)), 12],
+        )
 
     def test_an_empty_list_names_nothing(self) -> None:
-        held = transfers.registers_in(0)
+        # Arrange
+        cpu = loading(0x2000, 0xE8910000)
 
-        self.assertEqual(held, ())
+        # Act
+        with self.assertRaises(arm6.EmptyRegisterList) as refused:
+            cpu.step()
+
+        # Assert
+        self.assertIn("7.9", str(refused.exception))
 
     def test_the_number_transferred_is_the_number_named(self) -> None:
-        held = len(transfers.registers_in(0b0101_0101_0101_0101))
+        # Arrange
+        cpu = loading(0x2000, 0xE8815555)
 
-        self.assertEqual(held, 8)
+        # Act
+        cpu.step()
+
+        # Assert
+        self.assertEqual(len([row for row in cpu.bus.cycles if row.nrw == 1]), 8)
 
 
 class TheUnalignedWordLoadTest(unittest.TestCase):
+    def loaded(self, address: int) -> arm6.Cpu:
+        cpu = loading(address)
+        cpu.memory.write_word(0x1000, UNALIGNED_WORD)
+        return cpu
+
     def test_an_aligned_load_is_not_rotated(self) -> None:
-        held = transfers.rotate_load(0x11223344, 0x1000)
+        # Arrange
+        cpu = self.loaded(0x1000)
 
-        self.assertEqual(held, 0x11223344)
+        # Act
+        cpu.step()
 
-    def test_a_load_from_the_second_byte_puts_it_at_the_bottom(self) -> None:
-        held = transfers.rotate_load(0x11223344, 0x1001)
+        # Assert
+        self.assertEqual(cpu.registers.read(0), 0x11223344)
 
-        self.assertEqual(held, 0x44112233)
+    def test_a_load_from_a_later_byte_rotates_that_byte_to_the_bottom(self) -> None:
+        # Arrange
+        parts = [self.loaded(0x1000 + one) for one in (1, 2, 3)]
 
-    def test_a_load_from_the_third_byte_rotates_by_two_bytes(self) -> None:
-        held = transfers.rotate_load(0x11223344, 0x1002)
+        # Act
+        spent = [cpu.step() for cpu in parts]
 
-        self.assertEqual(held, 0x33441122)
-
-    def test_a_load_from_the_fourth_byte_rotates_by_three(self) -> None:
-        held = transfers.rotate_load(0x11223344, 0x1003)
-
-        self.assertEqual(held, 0x22334411)
+        # Assert
+        self.assertEqual(
+            ([cpu.registers.read(0) for cpu in parts], spent),
+            ([0x44112233, 0x33441122, 0x22334411], [3, 3, 3]),
+        )
 
     def test_the_addressed_byte_always_ends_up_in_the_bottom_eight_bits(self) -> None:
         # Arrange
-        addresses = [0x1000 + one for one in range(4)]
+        parts = [self.loaded(0x1000 + one) for one in range(4)]
 
         # Act
-        held = {transfers.rotate_load(0x11223344, one) & 0xFF for one in addresses}
+        spent = [cpu.step() for cpu in parts]
 
         # Assert
-        self.assertEqual(held, {0x44, 0x33, 0x22, 0x11}, quote("unalignedLoad"))
+        self.assertEqual(
+            ([cpu.registers.read(0) & 0xFF for cpu in parts], spent),
+            ([0x44, 0x33, 0x22, 0x11], [3, 3, 3, 3]),
+            quote("unalignedLoad"),
+        )
 
 
 class TheTransferAddressTest(unittest.TestCase):
-    def test_an_offset_up_is_added_to_the_base(self) -> None:
-        held = transfers.offset_address(0x1000, 0x20, up=True)
+    def marked(self, base: int, word: int, target: int) -> arm6.Cpu:
+        cpu = loading(base, word)
+        cpu.memory.write_word(target, 0x5EED)
+        return cpu
 
-        self.assertEqual(held, 0x1020)
+    def test_an_offset_up_is_added_to_the_base(self) -> None:
+        # Arrange
+        cpu = self.marked(0x1000, 0xE5910020, 0x1020)
+
+        # Act
+        cpu.step()
+
+        # Assert
+        self.assertEqual(cpu.registers.read(0), 0x5EED)
 
     def test_an_offset_down_is_subtracted(self) -> None:
-        held = transfers.offset_address(0x1000, 0x20, up=False)
+        # Arrange
+        cpu = self.marked(0x1000, 0xE5110020, 0x0FE0)
 
-        self.assertEqual(held, 0x0FE0)
+        # Act
+        cpu.step()
 
-    def test_an_address_that_leaves_the_bus_wraps(self) -> None:
-        held = transfers.offset_address(0xFFFFFFF0, 0x20, up=True)
+        # Assert
+        self.assertEqual(cpu.registers.read(0), 0x5EED)
 
-        self.assertEqual(held, 0x00000010)
+    def test_an_address_that_leaves_the_bus_either_way_wraps(self) -> None:
+        # Arrange
+        parts = [
+            self.marked(0xFFFFFFF0, 0xE5910020, 0x00000010),
+            self.marked(0x10, 0xE5110020, 0xFFFFFFF0),
+        ]
 
-    def test_and_one_that_goes_below_zero_wraps_too(self) -> None:
-        held = transfers.offset_address(0x10, 0x20, up=False)
+        # Act
+        spent = [cpu.step() for cpu in parts]
 
-        self.assertEqual(held, 0xFFFFFFF0)
+        # Assert
+        self.assertEqual(([cpu.registers.read(0) for cpu in parts], spent), ([0x5EED] * 2, [3, 3]))
 
 
 class WhatARegisterStoreOfTheCounterHoldsTest(unittest.TestCase):
     def test_the_stored_value_is_the_instruction_address_plus_twelve(self) -> None:
         # Arrange
-        address = 0x2000
+        cpu = at(0x2000, 0xE581F000)
+        cpu.registers.write(1, 0x3000)
 
         # Act
-        held = transfers.stored_counter(address)
+        cpu.step()
 
         # Assert
-        self.assertEqual(held, address + value("storedCounter"))
+        self.assertEqual(cpu.memory.read_word(0x3000), 0x2000 + value("storedCounter"))
 
 
 class DrivenAsWholeInstructionsTest(unittest.TestCase):
-    def part(self, *words: int) -> Cpu:
+    def part(self, *words: int) -> arm6.Cpu:
         image = b"".join(one.to_bytes(4, "little") for one in words)
-        held = Cpu("arm60", Memory(image=image, fill=0), fill=0)
+        held = arm6.Cpu("arm60", arm6.Memory(image=image, fill=0), fill=0)
         held.registers.pc = 0
         return held
 
@@ -240,16 +346,6 @@ class DrivenAsWholeInstructionsTest(unittest.TestCase):
 
         self.assertEqual((held.spent.s, held.spent.n, held.spent.i), (2, 2, 1))
 
-    def test_a_block_load_of_the_counter_refills_the_pipeline_too(self) -> None:
-        held = self.part(0xE8918001)
-        held.registers.write(1, 0x2000)
-        held.memory.write_word(0x2000, 0x11)
-        held.memory.write_word(0x2004, 0x40)
-
-        held.step()
-
-        self.assertEqual((held.registers.read(0), held.registers.pc), (0x11, 0x40))
-
     def test_a_block_transfer_that_writes_the_base_back_does_so(self) -> None:
         held = self.part(0xE8B1000C)
         held.registers.write(1, 0x2000)
@@ -295,56 +391,45 @@ class DrivenAsWholeInstructionsTest(unittest.TestCase):
 
         self.assertEqual((held.registers.read(0), held.registers.read(1)), (0xAA, 0xBB))
 
-    def test_a_block_store_writes_every_register_it_names(self) -> None:
-        held = self.part(0xE8810005)
-        held.registers.write(1, 0x2000)
-        held.registers.write(0, 0xAA)
-        held.registers.write(2, 0xCC)
-
-        held.step()
-
-        self.assertEqual(
-            (held.memory.read_word(0x2000), held.memory.read_word(0x2004)), (0xAA, 0xCC)
-        )
-
-    def test_a_block_store_of_the_counter_writes_the_address_plus_twelve(self) -> None:
-        held = self.part(0xE8818000)
-        held.registers.write(1, 0x2000)
-
-        held.step()
-
-        self.assertEqual(held.memory.read_word(0x2000), 12)
-
     def test_a_block_store_through_the_user_bank_takes_the_user_registers(self) -> None:
+        # Arrange
         held = self.part(0xE8C12000)
         held.registers.write(1, 0x2000)
-        held.registers.cpsr = psr.with_mode(held.registers.cpsr, psr.MODES["usr32"])
+        in_mode(held, "usr32")
         held.registers.write(13, 0xDEAD)
-        held.registers.cpsr = psr.with_mode(held.registers.cpsr, psr.MODES["svc32"])
+        in_mode(held, "svc32")
         held.registers.write(13, 0xBEEF)
 
+        # Act
         held.step()
 
+        # Assert
         self.assertEqual(held.memory.read_word(0x2000), 0xDEAD)
 
     def test_a_block_load_through_the_user_bank_writes_the_user_registers(self) -> None:
+        # Arrange
         held = self.part(0xE8D12000)
         held.registers.write(1, 0x2000)
         held.memory.write_word(0x2000, 0xC0DE)
 
+        # Act
         held.step()
 
-        held.registers.cpsr = psr.with_mode(held.registers.cpsr, psr.MODES["usr32"])
+        # Assert
+        in_mode(held, "usr32")
         self.assertEqual(held.registers.read(13), 0xC0DE)
 
     def test_a_block_load_of_the_counter_with_the_flag_restores_the_saved_status(self) -> None:
+        # Arrange
         held = self.part(0xE8D18000)
         held.registers.write(1, 0x2000)
-        held.registers.spsr["svc"] = 0xF00000D3
+        held.registers.save(0xF00000D3)
         held.memory.write_word(0x2000, 0x40)
 
+        # Act
         held.step()
 
+        # Assert
         self.assertEqual(held.registers.cpsr, 0xF00000D3)
 
     def test_a_byte_swap_exchanges_one_byte(self) -> None:
@@ -378,14 +463,17 @@ class DrivenAsWholeInstructionsTest(unittest.TestCase):
         self.assertEqual(held.registers.pc, 0x04, quote("coprocessorAbsent"))
 
     def test_a_block_load_of_the_counter_in_a_user_mode_has_no_status_to_restore(self) -> None:
+        # Arrange
         held = self.part(0xE8D18000)
         held.registers.write(1, 0x2000)
-        held.registers.cpsr = psr.with_mode(held.registers.cpsr, psr.MODES["usr32"])
+        in_mode(held, "usr32")
         before = held.registers.cpsr
         held.memory.write_word(0x2000, 0x40)
 
+        # Act
         held.step()
 
+        # Assert
         self.assertEqual((held.registers.pc, held.registers.cpsr), (0x40, before))
 
     def test_a_pre_indexed_store_without_write_back_leaves_the_base_alone(self) -> None:

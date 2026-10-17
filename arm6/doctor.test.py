@@ -51,130 +51,239 @@ class OneFindingTest(unittest.TestCase):
 
 class TheVersionIsReadRatherThanImportedTest(unittest.TestCase):
     def test_it_is_found_in_the_file_beside_the_doctor(self) -> None:
-        held = doctor._version()
+        # Arrange
+        beside = ROOT / "arm6" / "version.py"
 
-        self.assertRegex(held, r"^\d+\.\d+\.\d+")
+        # Act
+        held = doctor.installed_version(beside)
+
+        # Assert
+        self.assertRegex(held, r"^\d+\.\d+\.\d+$")
+
+    def test_left_to_itself_it_reads_that_same_file(self) -> None:
+        # Arrange
+        beside = doctor.installed_version(ROOT / "arm6" / "version.py")
+
+        # Act
+        held = doctor.installed_version()
+
+        # Assert
+        self.assertEqual(held, beside)
 
     def test_a_file_with_no_version_in_it_is_reported_rather_than_crashed_on(self) -> None:
+        # Arrange
         empty = Path(__file__).resolve().parent / "decode.py"
 
-        held = doctor._version(empty)
+        # Act
+        held = doctor.installed_version(empty)
 
+        # Assert
         self.assertEqual(held, "unknown")
 
 
 class WhatIsActuallyOnThisMachineTest(unittest.TestCase):
     def test_the_python_it_is_running_on_is_reported(self) -> None:
-        held = doctor._python()
+        # Arrange
+        running = sys.version_info[:2]
 
-        self.assertEqual(held.name, "python")
+        # Act
+        held = doctor.check_python()
+
+        # Assert
+        self.assertEqual((held.name, held.ok), ("python", running >= (3, 12)))
 
     def test_the_package_names_itself_and_its_version(self) -> None:
-        held = doctor._package()
+        # Arrange
+        version = doctor.installed_version()
 
-        self.assertIn("arm6", held.detail)
+        # Act
+        held = doctor.check_package()
+
+        # Assert
+        self.assertEqual(held.detail, f"arm6 {version}")
 
     def test_a_part_that_builds_and_runs_is_reported_as_working(self) -> None:
-        held = doctor._processor("arm60")
+        # Arrange
+        name = "arm60"
 
+        # Act
+        held = doctor.check_processor(name)
+
+        # Assert
         self.assertTrue(held.ok)
 
     def test_and_the_report_says_what_it_actually_drove(self) -> None:
-        held = doctor._processor("arm60")
+        # Arrange
+        name = "arm60"
 
-        self.assertIn("cycles", held.detail)
+        # Act
+        held = doctor.check_processor(name)
+
+        # Assert
+        self.assertIn("1 cycles spent", held.detail)
 
     def test_and_it_says_where_the_reset_left_the_counter(self) -> None:
-        held = doctor._processor("arm60")
+        # Arrange
+        name = "arm60"
 
+        # Act
+        held = doctor.check_processor(name)
+
+        # Assert
         self.assertIn("reset to 0x00000000", held.detail)
 
     def test_a_part_that_builds_and_will_not_reset_is_reported_as_broken(self) -> None:
+        # Arrange
         class WillNotReset:
             def reset(self) -> None:
                 raise RuntimeError("no")
 
-        held = doctor._processor("arm60", build=lambda name: WillNotReset())
+        # Act
+        held = doctor.check_processor("arm60", build=lambda name: WillNotReset())
 
+        # Assert
         self.assertFalse(held.ok)
 
     def test_a_part_that_will_not_build_is_reported_with_what_stopped_it(self) -> None:
+        # Arrange
         def refuse(name: str) -> object:
             raise RuntimeError("no")
 
-        held = doctor._processor("arm60", build=refuse)
+        # Act
+        held = doctor.check_processor("arm60", build=refuse)
 
+        # Assert
         self.assertFalse(held.ok)
 
     def test_and_the_failure_is_named_by_type(self) -> None:
+        # Arrange
         def refuse(name: str) -> object:
             raise RuntimeError("no")
 
-        held = doctor._processor("arm60", build=refuse)
+        # Act
+        held = doctor.check_processor("arm60", build=refuse)
 
-        self.assertIn("RuntimeError", held.detail)
+        # Assert
+        self.assertIn("RuntimeError: no", held.detail)
 
 
 class TheDocumentsThisRepositoryCannotCarryTest(unittest.TestCase):
     def test_a_directory_that_is_not_there_is_not_the_same_as_an_empty_one(self) -> None:
-        absent = doctor._documents(Path("/nowhere/at/all"))
-        empty = doctor._documents(Path(__file__).resolve().parent)
+        # Arrange
+        absent = doctor.check_documents(Path("/nowhere/at/all"))
 
+        # Act
+        empty = doctor.check_documents(Path(__file__).resolve().parent)
+
+        # Assert
         self.assertNotEqual(absent.detail, empty.detail)
 
     def test_an_absent_directory_is_reported_as_absent_rather_than_broken(self) -> None:
-        held = doctor._documents(Path("/nowhere/at/all"))
+        # Arrange
+        absent = Path("/nowhere/at/all")
 
-        self.assertIn("not there", held.detail)
+        # Act
+        held = doctor.check_documents(absent)
+
+        # Assert
+        self.assertEqual(
+            (
+                held.ok,
+                held.detail.endswith(
+                    "is not there, so no quotation can be checked on this machine"
+                ),
+            ),
+            (True, True),
+        )
 
     def test_a_directory_holding_nothing_says_it_holds_nothing(self) -> None:
-        held = doctor._documents(Path(__file__).resolve().parent / "version.py")
+        # Arrange
+        a_file = Path(__file__).resolve().parent / "version.py"
 
+        # Act
+        held = doctor.check_documents(a_file)
+
+        # Assert
         self.assertIn("not there", held.detail)
 
     def test_a_directory_with_documents_in_it_counts_and_names_them(self) -> None:
-        with tempfile.TemporaryDirectory() as where:
-            (Path(where) / "a-datasheet.pdf").write_bytes(b"x")
+        # Arrange
+        where = Path(tempfile.mkdtemp())
+        (where / "a-datasheet.pdf").write_bytes(b"x")
 
-            held = doctor._documents(Path(where))
+        # Act
+        held = doctor.check_documents(where)
 
-            self.assertIn("1 in", held.detail)
+        # Assert
+        self.assertEqual(held.detail, f"1 in {where}: a-datasheet.pdf")
 
     def test_and_names_what_it_found(self) -> None:
-        with tempfile.TemporaryDirectory() as where:
-            (Path(where) / "a-datasheet.pdf").write_bytes(b"x")
+        # Arrange
+        where = Path(tempfile.mkdtemp())
+        (where / "a-datasheet.pdf").write_bytes(b"x")
+        (where / "b-datasheet.pdf").write_bytes(b"x")
 
-            held = doctor._documents(Path(where))
+        # Act
+        held = doctor.check_documents(where)
 
-            self.assertIn("a-datasheet.pdf", held.detail)
+        # Assert
+        self.assertTrue(held.detail.endswith("a-datasheet.pdf, b-datasheet.pdf"))
 
     def test_a_directory_that_is_there_and_holds_nothing_says_none(self) -> None:
-        with tempfile.TemporaryDirectory() as where:
-            held = doctor._documents(Path(where))
+        # Arrange
+        where = Path(tempfile.mkdtemp())
 
-            self.assertIn("none", held.detail)
+        # Act
+        held = doctor.check_documents(where)
+
+        # Assert
+        self.assertEqual(held.detail, f"0 in {where}: none")
 
 
 class TheRecogniserThisMembersDocumentNeedsTest(unittest.TestCase):
     def test_a_machine_with_both_tools_is_reported_as_able_to_check_quotes(self) -> None:
-        held = doctor._recogniser(lambda name: "/usr/bin/" + name)
+        # Arrange
+        def everything(name: str) -> str:
+            return "/usr/bin/" + name
 
-        self.assertTrue(held.ok)
+        # Act
+        held = doctor.check_recogniser(everything)
+
+        # Assert
+        self.assertEqual((held.ok, held.detail), (True, "pdftoppm, tesseract present"))
 
     def test_a_machine_with_neither_says_which_is_missing(self) -> None:
-        held = doctor._recogniser(lambda name: None)
+        # Arrange
+        def nothing(name: str) -> None:
+            return None
 
-        self.assertIn("tesseract", held.detail)
+        # Act
+        held = doctor.check_recogniser(nothing)
+
+        # Assert
+        self.assertTrue(held.detail.startswith("pdftoppm, tesseract not installed"))
 
     def test_and_is_not_reported_as_working(self) -> None:
-        held = doctor._recogniser(lambda name: None)
+        # Arrange
+        def nothing(name: str) -> None:
+            return None
 
+        # Act
+        held = doctor.check_recogniser(nothing)
+
+        # Assert
         self.assertFalse(held.ok)
 
     def test_a_machine_with_only_one_of_them_still_fails(self) -> None:
-        held = doctor._recogniser(lambda name: None if name == "tesseract" else "/usr/bin/x")
+        # Arrange
+        def without_tesseract(name: str) -> str | None:
+            return None if name == "tesseract" else "/usr/bin/x"
 
-        self.assertFalse(held.ok)
+        # Act
+        held = doctor.check_recogniser(without_tesseract)
+
+        # Assert
+        self.assertEqual((held.ok, held.detail.split(" not installed")[0]), (False, "tesseract"))
 
 
 class TheReportAsAWholeTest(unittest.TestCase):
@@ -218,22 +327,33 @@ class TheReportAsAWholeTest(unittest.TestCase):
 
 class TheDoctorRunsWhereThePackageMightNotImportTest(unittest.TestCase):
     def test_it_puts_the_repository_on_the_path_when_nothing_else_has(self) -> None:
+        # Arrange
         kept = list(sys.path)
-        try:
-            sys.path[:] = [one for one in sys.path if one != str(ROOT)]
+        self.addCleanup(sys.path.__setitem__, slice(None), kept)
+        sys.path[:] = [one for one in sys.path if one != str(ROOT)]
 
-            held = doctor._default_build("arm60")
+        # Act
+        held = doctor.default_build("arm60")
 
-            self.assertEqual(held.model.name, "arm60")
-        finally:
-            sys.path[:] = kept
+        # Assert
+        self.assertEqual((held.model.name, sys.path[0]), ("arm60", str(ROOT)))
+
+    def test_a_part_it_builds_starts_quiet(self) -> None:
+        # Arrange
+        name = "arm60"
+
+        # Act
+        held = doctor.default_build(name)
+
+        # Assert
+        self.assertEqual([held.registers.read(one) for one in range(15)], [0] * 15)
 
     def test_a_root_that_is_not_on_the_path_is_put_there(self) -> None:
         # Arrange
         path: list[str] = []
 
         # Act
-        added = doctor._reachable(Path("/somewhere"), path)
+        added = doctor.reachable(Path("/somewhere"), path)
 
         # Assert
         self.assertEqual((added, path), (True, ["/somewhere"]))
@@ -243,7 +363,7 @@ class TheDoctorRunsWhereThePackageMightNotImportTest(unittest.TestCase):
         path = ["/somewhere"]
 
         # Act
-        added = doctor._reachable(Path("/somewhere"), path)
+        added = doctor.reachable(Path("/somewhere"), path)
 
         # Assert
         self.assertEqual((added, path), (False, ["/somewhere"]))

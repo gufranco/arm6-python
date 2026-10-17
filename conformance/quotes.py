@@ -156,11 +156,11 @@ def page_text(
 def declared() -> dict[str, dict[str, Any]]:
     found: dict[str, dict[str, Any]] = {}
     for path in sorted(RECORDS.glob("*.json")):
-        _collect_documents(json.loads(path.read_text()), found)
+        collect_documents(json.loads(path.read_text()), found)
     return found
 
 
-def _collect_documents(node: Any, into: dict[str, dict[str, Any]]) -> None:
+def collect_documents(node: Any, into: dict[str, dict[str, Any]]) -> None:
     if isinstance(node, dict):
         for key, value in node.items():
             if key == "documents" and isinstance(value, dict):
@@ -168,10 +168,10 @@ def _collect_documents(node: Any, into: dict[str, dict[str, Any]]) -> None:
                     if isinstance(one, dict):
                         into[name] = one
             else:
-                _collect_documents(value, into)
+                collect_documents(value, into)
     elif isinstance(node, list):
         for one in node:
-            _collect_documents(one, into)
+            collect_documents(one, into)
 
 
 def claims(node: Any, trail: str = "") -> list[Claim]:

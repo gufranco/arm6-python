@@ -120,7 +120,7 @@
           "page": 28,
           "parts": ["arm60"],
           "heldBy": [
-            "arm6/dataops.test.py::TheBoothCycleCountTest.test_every_band_the_formula_names_is_two_bits_wide"
+            "arm6/multiply.test.py::TheBoothCycleCountTest.test_every_band_the_formula_names_is_two_bits_wide"
           ]
         },
         "multiplyRdEqualsRm": {
@@ -151,7 +151,7 @@
           "page": 58,
           "parts": ["arm60"],
           "heldBy": [
-            "arm6/dataops.test.py::TheBoothCycleCountTest.test_the_bands_the_datasheet_states_are_the_bands_it_gives"
+            "arm6/multiply.test.py::TheBoothCycleCountTest.test_the_bands_the_datasheet_states_are_the_bands_it_gives"
           ]
         },
         "multiplyWorstCase": {
@@ -307,7 +307,7 @@
           "page": 5,
           "parts": ["arm60"],
           "heldBy": [
-            "arm6/core.test.py::WhatTheBusActuallyDroveTest.test_a_swap_holds_the_lock_line_high_across_both_of_its_accesses"
+            "arm6/pins.test.py::WhatTheBusActuallyDroveTest.test_a_swap_holds_the_lock_line_high_across_both_of_its_accesses"
           ]
         },
         "ntransUserMode": {
@@ -317,8 +317,8 @@
           "page": 5,
           "parts": ["arm60"],
           "heldBy": [
-            "arm6/core.test.py::WhatTheBusActuallyDroveTest.test_a_privileged_mode_drives_the_translate_line_high",
-            "arm6/core.test.py::WhatTheBusActuallyDroveTest.test_and_a_user_mode_drives_it_low"
+            "arm6/pins.test.py::WhatTheBusActuallyDroveTest.test_a_privileged_mode_drives_the_translate_line_high",
+            "arm6/pins.test.py::WhatTheBusActuallyDroveTest.test_and_a_user_mode_drives_it_low"
           ]
         },
         "coprocessorAbsent": {
@@ -350,7 +350,7 @@
           "parts": ["arm60"],
           "heldBy": [
             "arm6/core.test.py::WhatTableTwentySaysEachFormCostsTest.test_an_instruction_whose_condition_fails_costs_one_sequential_cycle",
-            "arm6/core.test.py::TheConditionFieldDecidesTest.test_and_one_whose_condition_fails_does_not"
+            "arm6/conditions.test.py::TheConditionFieldDecidesTest.test_and_one_whose_condition_fails_does_not"
           ]
         },
         "neverCondition": {
@@ -360,7 +360,7 @@
           "page": 17,
           "parts": ["arm60"],
           "heldBy": [
-            "arm6/core.test.py::TheConditionFieldDecidesTest.test_the_never_code_never_executes"
+            "arm6/conditions.test.py::TheConditionFieldDecidesTest.test_the_never_code_never_executes"
           ]
         },
         "teqp": {
@@ -427,7 +427,7 @@
           "page": 5,
           "parts": ["arm60"],
           "heldBy": [
-            "arm6/core.test.py::WhatTheBusActuallyDroveTest.test_an_instruction_fetch_drives_the_opcode_line_low"
+            "arm6/pins.test.py::WhatTheBusActuallyDroveTest.test_an_instruction_fetch_drives_the_opcode_line_low"
           ]
         },
         "exceptionEntry": {
@@ -437,7 +437,7 @@
           "page": 61,
           "parts": ["arm60"],
           "heldBy": [
-            "arm6/core.test.py::WhereAnExceptionGoesTest.test_a_software_interrupt_vectors_to_eight"
+            "arm6/exceptions.test.py::WhereAnExceptionGoesTest.test_a_software_interrupt_vectors_to_eight"
           ]
         },
         "shiftBitSeven": {
@@ -590,7 +590,7 @@
           "page": 31,
           "parts": ["arm60"],
           "heldBy": [
-            "conformance/singlestep.test.py::EveryRestrictionIsDrivenTest.test_a_post_indexed_transfer_whose_offset_is_its_base"
+            "conformance/restrictions.test.py::EveryRestrictionIsDrivenTest.test_a_post_indexed_transfer_whose_offset_is_its_base"
           ]
         },
         "r15AsBase": {
