@@ -1,8 +1,8 @@
-English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁體中文（香港）](README.zh-HK.md)
-
 # ARM6
 
 The ARM60 processor in Python, advanced one instruction or one bus cycle at a time, held to the GEC Plessey ARM60 datasheet for every instruction and every cycle it spends, and to a filtered ARM7TDMI corpus for the processor state after each one.
+
+English &nbsp;|&nbsp; [日本語](README.ja.md) &nbsp;|&nbsp; [简体中文](README.zh-Hans.md) &nbsp;|&nbsp; [繁體中文（香港）](README.zh-HK.md)
 
 [![CI](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/gufranco/arm6-python)](https://github.com/gufranco/arm6-python/releases)
