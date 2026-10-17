@@ -9,6 +9,7 @@ sys.path.insert(0, str(ROOT))
 
 from arm6.errors import BadWaits, WaitsRequired  # noqa: E402
 from arm6.tally import Cycles, Waits  # noqa: E402
+from conformance.printed import quote  # noqa: E402
 
 
 class CountsInTheDocumentsTermsTest(unittest.TestCase):
@@ -156,11 +157,14 @@ class RefusesToInventABoardTest(unittest.TestCase):
         self.assertIn("coprocessor", str(caught.exception))
 
     def test_a_board_with_no_wait_states_is_a_configuration_the_pin_table_allows(self) -> None:
+        # Arrange
         tally = Cycles(s=3, n=2, i=1, c=1)
 
+        # Act
         ticks = tally.ticks(Waits(sequential=1, nonsequential=1, internal=1, coprocessor=1))
 
-        self.assertEqual(ticks, tally.total)
+        # Assert
+        self.assertEqual(ticks, tally.total, quote("nwaitTiedHigh"))
 
     def test_a_board_says_what_it_costs_when_printed(self) -> None:
         waits = Waits(sequential=1, nonsequential=2, internal=1, coprocessor=1)

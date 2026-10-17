@@ -10,6 +10,7 @@ sys.path.insert(0, str(ROOT))
 from arm6 import dataops, psr  # noqa: E402
 from arm6.core import Cpu  # noqa: E402
 from arm6.memory import Memory  # noqa: E402
+from conformance.printed import quote, value  # noqa: E402
 
 
 class TheBoothCycleCountTest(unittest.TestCase):
@@ -44,9 +45,14 @@ class TheBoothCycleCountTest(unittest.TestCase):
         self.assertEqual(held, 3)
 
     def test_every_band_the_formula_names_is_two_bits_wide(self) -> None:
-        held = {dataops.booth_cycles(one) for one in range(1 << 27, 1 << 29, 1 << 20)}
+        # Arrange
+        multipliers = range(1 << 27, 1 << 29, 1 << 20)
 
-        self.assertEqual(held, {15})
+        # Act
+        held = {dataops.booth_cycles(one) for one in multipliers}
+
+        # Assert
+        self.assertEqual(held, {15}, quote("multiplierRadix"))
 
     def test_anything_from_two_to_the_twenty_nine_takes_sixteen(self) -> None:
         held = dataops.booth_cycles(1 << 29)
@@ -64,9 +70,14 @@ class TheBoothCycleCountTest(unittest.TestCase):
         self.assertLessEqual(held, 16)
 
     def test_the_bands_the_datasheet_states_are_the_bands_it_gives(self) -> None:
-        held = [dataops.booth_cycles(1 << (2 * m - 3)) for m in range(2, 16)]
+        # Arrange
+        multipliers = [1 << (2 * m - 3) for m in range(2, 16)]
 
-        self.assertEqual(held, list(range(2, 16)))
+        # Act
+        held = [dataops.booth_cycles(one) for one in multipliers]
+
+        # Assert
+        self.assertEqual(held, list(range(2, 16)), quote("multiplyEarlyTermination"))
 
 
 class TheLogicalOperationsTest(unittest.TestCase):
@@ -106,9 +117,14 @@ class TheLogicalOperationsTest(unittest.TestCase):
         self.assertFalse(held.touches_v)
 
     def test_and_takes_its_carry_from_the_shifter_rather_than_the_adder(self) -> None:
-        held = dataops.alu(0b0000, 0xFFFFFFFF, 0xFFFFFFFF, carry=True)
+        # Arrange
+        operand = 0xFFFFFFFF
 
-        self.assertTrue(held.c)
+        # Act
+        held = dataops.alu(0b0000, operand, operand, carry=True)
+
+        # Assert
+        self.assertTrue(held.c, quote("logicalFlags"))
 
     def test_the_zero_flag_is_set_only_when_the_result_is_all_zeros(self) -> None:
         held = dataops.alu(0b0000, 0xFF00, 0x00FF, carry=False)
@@ -128,9 +144,14 @@ class TheArithmeticOperationsTest(unittest.TestCase):
         self.assertEqual(held.result, 5)
 
     def test_a_sum_that_leaves_the_word_carries_out_of_bit_thirty_one(self) -> None:
-        held = dataops.alu(0b0100, 0xFFFFFFFF, 1, carry=False)
+        # Arrange
+        largest = 0xFFFFFFFF
 
-        self.assertEqual((held.result, held.c), (0, True))
+        # Act
+        held = dataops.alu(0b0100, largest, 1, carry=False)
+
+        # Assert
+        self.assertEqual((held.result, held.c), (0, True), quote("arithmeticFlags"))
 
     def test_sub_produces_the_difference(self) -> None:
         held = dataops.alu(0b0010, 5, 3, carry=False)
@@ -237,9 +258,14 @@ class TheImmediateOperandTest(unittest.TestCase):
         self.assertEqual(held[1], True)
 
     def test_the_rotate_field_turns_the_byte_by_twice_its_value(self) -> None:
-        held = dataops.immediate(0x00000101, carry=False)
+        # Arrange
+        word = 0x00000101
 
-        self.assertEqual(held[0], 0x40000000)
+        # Act
+        held = dataops.immediate(word, carry=False)
+
+        # Assert
+        self.assertEqual(held[0], 0x40000000, quote("immediateRotate"))
 
     def test_a_rotated_immediate_takes_its_carry_from_bit_thirty_one(self) -> None:
         held = dataops.immediate(0x00000102, carry=False)
@@ -305,18 +331,24 @@ class DrivenAsWholeInstructionsTest(unittest.TestCase):
         self.assertTrue(psr.flag(held.registers.cpsr, psr.Z_BIT))
 
     def test_the_counter_read_as_an_operand_is_eight_bytes_ahead(self) -> None:
+        # Arrange
         held = self.part(0xE28F0000)
 
+        # Act
         held.step()
 
-        self.assertEqual(held.registers.read(0), 8)
+        # Assert
+        self.assertEqual(held.registers.read(0), value("prefetchOffset")[0])
 
     def test_and_twelve_bytes_ahead_when_a_register_supplies_the_shift(self) -> None:
+        # Arrange
         held = self.part(0xE1A0001F)
 
+        # Act
         held.step()
 
-        self.assertEqual(held.registers.read(0), 12)
+        # Assert
+        self.assertEqual(held.registers.read(0), value("prefetchOffset")[1])
 
     def test_reading_the_status_register_into_a_register(self) -> None:
         held = self.part(0xE10F0000)
@@ -419,30 +451,41 @@ class DrivenAsWholeInstructionsTest(unittest.TestCase):
         self.assertEqual(held.registers.cpsr & 0x0FFFFFFF, before)
 
     def test_the_form_earlier_parts_spelled_teqp_restores_the_saved_status(self) -> None:
+        # Arrange
         held = self.part(0xE130F000)
         held.registers.spsr["svc"] = 0xF00000D3
 
+        # Act
         held.step()
 
-        self.assertEqual(held.registers.cpsr, 0xF00000D3)
+        # Assert
+        self.assertEqual(held.registers.cpsr, 0xF00000D3, quote("teqp"))
 
     def test_and_does_nothing_at_all_in_a_user_mode(self) -> None:
+        # Arrange
         held = self.part(0xE130F000)
         held.registers.cpsr = psr.with_mode(held.registers.cpsr, psr.MODES["usr32"])
         before = held.registers.cpsr
 
+        # Act
         held.step()
 
-        self.assertEqual(held.registers.cpsr, before)
+        # Assert
+        self.assertEqual(held.registers.cpsr, before, quote("teqp"))
 
     def test_writing_the_counter_with_the_flag_set_restores_the_saved_status(self) -> None:
+        # Arrange
         held = self.part(0xE1B0F000)
         held.registers.spsr["svc"] = 0xF00000D3
         held.registers.write(0, 0x40)
 
+        # Act
         held.step()
 
-        self.assertEqual((held.registers.pc, held.registers.cpsr), (0x40, 0xF00000D3))
+        # Assert
+        self.assertEqual(
+            (held.registers.pc, held.registers.cpsr), (0x40, 0xF00000D3), quote("writingR15")
+        )
 
     def test_a_multiply_that_sets_flags_reports_a_zero_result_as_zero(self) -> None:
         held = self.part(0xE0100291)
@@ -466,14 +509,17 @@ class DrivenAsWholeInstructionsTest(unittest.TestCase):
     def test_a_multiply_accumulate_whose_destination_is_its_multiplicand_is_meaningless(
         self,
     ) -> None:
+        # Arrange
         held = self.part(0xE0213291)
         held.registers.write(1, 6)
         held.registers.write(2, 7)
         held.registers.write(3, 8)
 
+        # Act
         held.step()
 
-        self.assertEqual(held.registers.read(1), 8)
+        # Assert
+        self.assertEqual(held.registers.read(1), 8, quote("multiplyRdEqualsRm"))
 
     def test_a_reserved_encoding_in_the_transfer_space_is_not_a_transfer(self) -> None:
         held = self.part(0xE1000000)

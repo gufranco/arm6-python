@@ -9,6 +9,7 @@ sys.path.insert(0, str(ROOT))
 
 from arm6.errors import UnknownModelError  # noqa: E402
 from arm6.models import MODELS, Model, resolve  # noqa: E402
+from conformance.printed import quote  # noqa: E402
 
 
 class TheCatalogueTest(unittest.TestCase):
@@ -81,9 +82,14 @@ class NamingOneIsNotOptionalTest(unittest.TestCase):
 
 class TheAliasesTest(unittest.TestCase):
     def test_the_part_answers_to_the_family_name_as_well_as_its_own(self) -> None:
-        held = sorted(MODELS["arm60"].aliases)
+        # Arrange
+        model = MODELS["arm60"]
 
-        self.assertEqual(held, ["arm6"])
+        # Act
+        held = sorted(model.aliases)
+
+        # Assert
+        self.assertEqual(held, ["arm6"], quote("coreIsTheArm6"))
 
     def test_no_alias_collides_with_another_model_s_name(self) -> None:
         names = set(MODELS)

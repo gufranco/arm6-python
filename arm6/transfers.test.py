@@ -10,23 +10,39 @@ sys.path.insert(0, str(ROOT))
 from arm6 import psr, transfers  # noqa: E402
 from arm6.core import Cpu  # noqa: E402
 from arm6.memory import Memory  # noqa: E402
+from conformance.printed import quote, value  # noqa: E402
 
 
 class TheBranchOffsetTest(unittest.TestCase):
     def test_a_forward_branch_lands_past_the_prefetch(self) -> None:
-        held = transfers.branch_target(0x1000, 0xEA000000)
+        # Arrange
+        word = 0xEA000000
 
-        self.assertEqual(held, 0x1008)
+        # Act
+        held = transfers.branch_target(0x1000, word)
+
+        # Assert
+        self.assertEqual(held, 0x1008, quote("branchPrefetch"))
 
     def test_the_offset_is_shifted_left_two_bits(self) -> None:
-        held = transfers.branch_target(0x1000, 0xEA000001)
+        # Arrange
+        word = 0xEA000001
 
-        self.assertEqual(held, 0x100C)
+        # Act
+        held = transfers.branch_target(0x1000, word)
+
+        # Assert
+        self.assertEqual(held, 0x100C, quote("branchOffset"))
 
     def test_a_backward_branch_sign_extends_the_offset(self) -> None:
-        held = transfers.branch_target(0x1000, 0xEAFFFFFF)
+        # Arrange
+        word = 0xEAFFFFFF
 
-        self.assertEqual(held, 0x1004)
+        # Act
+        held = transfers.branch_target(0x1000, word)
+
+        # Assert
+        self.assertEqual(held, 0x1004, quote("branchOffset"))
 
     def test_the_furthest_branch_back_is_thirty_two_megabytes(self) -> None:
         held = transfers.branch_target(0x4000000, 0xEA800000)
@@ -93,9 +109,14 @@ class TheUnalignedWordLoadTest(unittest.TestCase):
         self.assertEqual(held, 0x22334411)
 
     def test_the_addressed_byte_always_ends_up_in_the_bottom_eight_bits(self) -> None:
-        held = {transfers.rotate_load(0x11223344, 0x1000 + one) & 0xFF for one in range(4)}
+        # Arrange
+        addresses = [0x1000 + one for one in range(4)]
 
-        self.assertEqual(held, {0x44, 0x33, 0x22, 0x11})
+        # Act
+        held = {transfers.rotate_load(0x11223344, one) & 0xFF for one in addresses}
+
+        # Assert
+        self.assertEqual(held, {0x44, 0x33, 0x22, 0x11}, quote("unalignedLoad"))
 
 
 class TheTransferAddressTest(unittest.TestCase):
@@ -122,9 +143,14 @@ class TheTransferAddressTest(unittest.TestCase):
 
 class WhatARegisterStoreOfTheCounterHoldsTest(unittest.TestCase):
     def test_the_stored_value_is_the_instruction_address_plus_twelve(self) -> None:
-        held = transfers.stored_counter(0x2000)
+        # Arrange
+        address = 0x2000
 
-        self.assertEqual(held, 0x200C)
+        # Act
+        held = transfers.stored_counter(address)
+
+        # Assert
+        self.assertEqual(held, address + value("storedCounter"))
 
 
 class DrivenAsWholeInstructionsTest(unittest.TestCase):
@@ -332,18 +358,24 @@ class DrivenAsWholeInstructionsTest(unittest.TestCase):
         self.assertEqual((held.registers.read(0), held.memory.read_byte(0x2000)), (0x44, 0x99))
 
     def test_a_coprocessor_data_transfer_with_none_attached_traps(self) -> None:
+        # Arrange
         held = self.part(0xED912100)
 
+        # Act
         held.step()
 
-        self.assertEqual(held.registers.pc, 0x04)
+        # Assert
+        self.assertEqual(held.registers.pc, 0x04, quote("coprocessorAbsent"))
 
     def test_a_coprocessor_register_transfer_with_none_attached_traps_too(self) -> None:
+        # Arrange
         held = self.part(0xEE212113)
 
+        # Act
         held.step()
 
-        self.assertEqual(held.registers.pc, 0x04)
+        # Assert
+        self.assertEqual(held.registers.pc, 0x04, quote("coprocessorAbsent"))
 
     def test_a_block_load_of_the_counter_in_a_user_mode_has_no_status_to_restore(self) -> None:
         held = self.part(0xE8D18000)

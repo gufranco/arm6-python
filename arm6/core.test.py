@@ -12,6 +12,7 @@ from arm6.core import Cpu  # noqa: E402
 from arm6.errors import RunLimit, UnknownModelError  # noqa: E402
 from arm6.memory import Memory  # noqa: E402
 from arm6.transfers import EmptyRegisterList, UnspecifiedEncoding  # noqa: E402
+from conformance.printed import quote, value  # noqa: E402
 
 MOV_R0_R1 = 0xE1A00001
 MOV_R0_R1_LSL_R2 = 0xE1A00211
@@ -94,36 +95,52 @@ class ResetDefinesAndPowerOnScramblesTest(unittest.TestCase):
         self.assertEqual(held.registers.pc, 0)
 
     def test_it_forces_supervisor_mode(self) -> None:
+        # Arrange
         held = Cpu("arm60", fill=0)
 
+        # Act
         held.reset()
 
-        self.assertEqual(held.mode.name, "svc32")
+        # Assert
+        self.assertEqual(held.mode.name, "svc32", quote("resetForcesMode"))
 
     def test_it_sets_both_interrupt_disables(self) -> None:
+        # Arrange
         held = Cpu("arm60", fill=0)
 
+        # Act
         held.reset()
 
+        # Assert
         disabled = (
             psr.flag(held.registers.cpsr, psr.I_BIT),
             psr.flag(held.registers.cpsr, psr.F_BIT),
         )
-        self.assertEqual(disabled, (True, True))
+        self.assertEqual(disabled, (True, True), quote("resetForcesMode"))
 
     def test_the_saved_counter_it_writes_is_not_defined_so_it_is_not_zero(self) -> None:
+        # Arrange
         held = Cpu("arm60", fill=0)
 
+        # Act
         held.reset()
 
-        self.assertNotEqual(held.registers.read(14), 0)
+        # Assert
+        self.assertNotEqual(
+            held.registers.read(14), 0, (quote("resetOverwrites"), quote("resetUndefined"))
+        )
 
     def test_and_neither_is_the_saved_status_register(self) -> None:
+        # Arrange
         held = Cpu("arm60", fill=0)
 
+        # Act
         held.reset()
 
-        self.assertNotEqual(held.registers.spsr["svc"], 0)
+        # Assert
+        self.assertNotEqual(
+            held.registers.spsr["svc"], 0, (quote("resetOverwrites"), quote("resetUndefined"))
+        )
 
     def test_a_reset_costs_at_least_two_cycles_of_dummy_fetches(self) -> None:
         held = Cpu("arm60", fill=0)
@@ -258,19 +275,25 @@ class WhatTableTwentySaysEachFormCostsTest(unittest.TestCase):
         self.assertEqual((held.spent.s, held.spent.i), (1, 5))
 
     def test_the_longest_multiply_costs_sixteen_internal_cycles(self) -> None:
+        # Arrange
         held = machine(MULTIPLY)
         held.registers.write(2, 0xFFFFFFFF)
 
+        # Act
         held.step()
 
-        self.assertEqual((held.spent.s, held.spent.i), (1, 16))
+        # Assert
+        self.assertEqual(f"{held.spent.s}S+{held.spent.i}I", value("multiplyWorstCase"))
 
     def test_an_instruction_whose_condition_fails_costs_one_sequential_cycle(self) -> None:
+        # Arrange
         held = machine(NEVER)
 
+        # Act
         spent = held.step()
 
-        self.assertEqual((spent, held.spent.s), (1, 1))
+        # Assert
+        self.assertEqual((spent, held.spent.s), (1, 1), quote("conditionNotMet"))
 
     def test_an_undefined_instruction_costs_one_cycle_more_than_the_trap(self) -> None:
         held = machine(UNDEFINED)
@@ -334,34 +357,48 @@ class WhatTheBusActuallyDroveTest(unittest.TestCase):
         self.assertEqual(held.bus.cycles[1].nbw, 0)
 
     def test_a_swap_holds_the_lock_line_high_across_both_of_its_accesses(self) -> None:
+        # Arrange
         held = machine(SWAP_WORD)
         held.registers.write(2, 0x2000)
 
+        # Act
         held.step()
 
-        self.assertEqual([one.lock for one in held.bus.cycles], [0, 1, 1, 0])
+        # Assert
+        self.assertEqual(
+            [one.lock for one in held.bus.cycles], [0, 1, 1, 0], quote("lockDuringSwap")
+        )
 
     def test_an_instruction_fetch_drives_the_opcode_line_low(self) -> None:
+        # Arrange
         held = machine(MOV_R0_R1)
 
+        # Act
         held.step()
 
-        self.assertEqual(held.bus.cycles[0].nopc, 0)
+        # Assert
+        self.assertEqual(held.bus.cycles[0].nopc, 0, quote("nopcDefinition"))
 
     def test_a_privileged_mode_drives_the_translate_line_high(self) -> None:
+        # Arrange
         held = machine(MOV_R0_R1)
 
+        # Act
         held.step()
 
-        self.assertEqual(held.bus.cycles[0].ntrans, 1)
+        # Assert
+        self.assertEqual(held.bus.cycles[0].ntrans, 1, quote("ntransUserMode"))
 
     def test_and_a_user_mode_drives_it_low(self) -> None:
+        # Arrange
         held = machine(MOV_R0_R1)
         held.registers.cpsr = psr.with_mode(held.registers.cpsr, psr.MODES["usr32"])
 
+        # Act
         held.step()
 
-        self.assertEqual(held.bus.cycles[0].ntrans, 0)
+        # Assert
+        self.assertEqual(held.bus.cycles[0].ntrans, 0, quote("ntransUserMode"))
 
     def test_a_discarded_prefetch_is_still_a_real_read(self) -> None:
         held = machine(BRANCH, 0, 0x12345678)
@@ -406,25 +443,32 @@ class WhatEachInstructionActuallyDidTest(unittest.TestCase):
         self.assertEqual(held.registers.read(0), 0x44112233)
 
     def test_a_store_of_the_counter_writes_the_address_plus_twelve(self) -> None:
+        # Arrange
         held = machine(0xE581F000)
         held.registers.write(1, 0x2000)
 
+        # Act
         held.step()
 
-        self.assertEqual(held.memory.read_word(0x2000), 12)
+        # Assert
+        self.assertEqual(held.memory.read_word(0x2000), value("storedCounter"))
 
     def test_a_block_load_takes_the_lowest_register_from_the_lowest_address(self) -> None:
+        # Arrange
         held = machine(LOAD_MANY)
         held.registers.write(1, 0x2000)
         held.memory.write_word(0x2000, 0xA)
         held.memory.write_word(0x2004, 0xB)
         held.memory.write_word(0x2008, 0xC)
 
+        # Act
         held.step()
 
+        # Assert
         self.assertEqual(
             (held.registers.read(0), held.registers.read(2), held.registers.read(3)),
             (0xA, 0xB, 0xC),
+            quote("blockTransferOrder"),
         )
 
     def test_a_swap_exchanges_the_register_and_the_memory(self) -> None:
@@ -447,19 +491,27 @@ class WhatEachInstructionActuallyDidTest(unittest.TestCase):
         self.assertEqual(held.registers.read(0), 42)
 
     def test_a_multiply_whose_destination_is_its_multiplicand_gives_zero(self) -> None:
+        # Arrange
         held = machine(0xE0010291)
         held.registers.write(1, 6)
         held.registers.write(2, 7)
 
+        # Act
         held.step()
 
-        self.assertEqual(held.registers.read(1), 0)
+        # Assert
+        self.assertEqual(held.registers.read(1), 0, quote("multiplyRdEqualsRm"))
 
     def test_an_empty_register_list_is_refused_rather_than_guessed_at(self) -> None:
+        # Arrange
         held = machine(0xE8910000)
 
-        with self.assertRaises(EmptyRegisterList):
+        # Act
+        with self.assertRaises(EmptyRegisterList, msg=quote("emptyRegisterList")):
             held.step()
+
+        # Assert
+        self.assertEqual(held.registers.pc, 0)
 
     def test_an_encoding_outside_the_figure_is_refused_too(self) -> None:
         held = machine(LONG_MULTIPLY)
@@ -478,11 +530,14 @@ class WhatEachInstructionActuallyDidTest(unittest.TestCase):
 
 class WhereAnExceptionGoesTest(unittest.TestCase):
     def test_a_software_interrupt_vectors_to_eight(self) -> None:
+        # Arrange
         held = machine(SOFTWARE_INTERRUPT)
 
+        # Act
         held.step()
 
-        self.assertEqual(held.registers.pc, 0x08)
+        # Assert
+        self.assertEqual(held.registers.pc, 0x08, quote("exceptionEntry"))
 
     def test_and_enters_supervisor_mode(self) -> None:
         held = machine(SOFTWARE_INTERRUPT)
@@ -678,14 +733,17 @@ class TheConditionFieldDecidesTest(unittest.TestCase):
         self.assertEqual(held.registers.read(0), 0x99)
 
     def test_and_one_whose_condition_fails_does_not(self) -> None:
+        # Arrange
         held = machine(0x01A00001)
         held.registers.cpsr = psr.with_flag(held.registers.cpsr, psr.Z_BIT, False)
         held.registers.write(1, 0x99)
         held.registers.write(0, 0x11)
 
+        # Act
         held.step()
 
-        self.assertEqual(held.registers.read(0), 0x11)
+        # Assert
+        self.assertEqual(held.registers.read(0), 0x11, quote("conditionNotMet"))
 
     def test_every_condition_code_is_reachable(self) -> None:
         held = machine(MOV_R0_R1)
@@ -695,9 +753,14 @@ class TheConditionFieldDecidesTest(unittest.TestCase):
         self.assertEqual(answers, {True, False})
 
     def test_the_never_code_never_executes(self) -> None:
+        # Arrange
         held = machine(MOV_R0_R1)
 
-        self.assertFalse(held.passes(0xF0000000))
+        # Act
+        executes = held.passes(0xF0000000)
+
+        # Assert
+        self.assertFalse(executes, quote("neverCondition"))
 
     def test_the_always_code_always_does(self) -> None:
         held = machine(MOV_R0_R1)

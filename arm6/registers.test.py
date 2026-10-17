@@ -9,6 +9,7 @@ sys.path.insert(0, str(ROOT))
 
 from arm6 import psr  # noqa: E402
 from arm6.registers import Registers  # noqa: E402
+from conformance.printed import quote, value  # noqa: E402
 
 
 def in_mode(name: str, seed: int = 1) -> Registers:
@@ -33,11 +34,14 @@ class ThirtySevenRegistersTest(unittest.TestCase):
         self.assertEqual(status, 6)
 
     def test_which_is_thirty_seven_in_all(self) -> None:
+        # Arrange
         held = Registers(seed=1)
 
+        # Act
         total = held.general_count() + held.status_count()
 
-        self.assertEqual(total, 37)
+        # Assert
+        self.assertEqual(total, value("registerCount"))
 
 
 class NothingStartsClearedTest(unittest.TestCase):
@@ -217,12 +221,15 @@ class TheSavedStatusRegistersTest(unittest.TestCase):
 
 class TheProgramCounterTest(unittest.TestCase):
     def test_reading_it_clears_the_bottom_two_bits(self) -> None:
+        # Arrange
         held = Registers(seed=1, fill=0)
         held.pc = 0x1006
 
+        # Act
         counter = held.read(15)
 
-        self.assertEqual(counter, 0x1004)
+        # Assert
+        self.assertEqual(counter, 0x1004, quote("r15Read"))
 
     def test_writing_it_goes_to_the_counter_rather_than_to_a_bank(self) -> None:
         held = Registers(seed=1, fill=0)

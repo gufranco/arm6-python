@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from arm6 import decode  # noqa: E402
+from conformance.printed import quote  # noqa: E402
 
 
 class TheElevenRowsFigureTwentyEightPrintsTest(unittest.TestCase):
@@ -239,10 +240,14 @@ class EncodingsTheDatasheetSaysDoNotTrapTest(unittest.TestCase):
         self.assertEqual(held, decode.UNSPECIFIED)
 
     def test_these_are_kept_apart_from_the_row_that_does_trap(self) -> None:
+        # Arrange
         traps = decode.classify(0xE6000010)
+
+        # Act
         does_not = decode.classify(0xE00002B1)
 
-        self.assertNotEqual(traps, does_not)
+        # Assert
+        self.assertNotEqual(traps, does_not, quote("undefinedNotTrapping"))
 
     def test_a_register_shift_with_bit_seven_clear_is_still_data_processing(self) -> None:
         held = decode.classify(0xE0812013)

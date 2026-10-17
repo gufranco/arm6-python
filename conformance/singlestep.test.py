@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from conformance import singlestep  # noqa: E402
+from conformance.printed import quote  # noqa: E402
 
 STATE = 40
 
@@ -565,9 +566,17 @@ class EveryRestrictionIsDrivenTest(unittest.TestCase):
         )
 
     def test_a_post_indexed_transfer_whose_offset_is_its_base(self) -> None:
+        # Arrange
+        word = 0xE6910001
+
+        # Act
+        reason = self.trips(word, "arm_ldr_str_register_offset")
+
+        # Assert
         self.assertEqual(
-            self.trips(0xE6910001, "arm_ldr_str_register_offset"),
+            reason,
             "a post-indexed transfer whose offset register is its base",
+            quote("postIndexedRmEqualsRn"),
         )
 
     def test_r15_as_the_destination_of_a_psr_read(self) -> None:

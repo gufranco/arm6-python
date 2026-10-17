@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from arm6 import psr  # noqa: E402
+from conformance.printed import quote, value  # noqa: E402
 
 
 class TheBitsTheDatasheetDrawsTest(unittest.TestCase):
@@ -27,9 +28,14 @@ class TheBitsTheDatasheetDrawsTest(unittest.TestCase):
         self.assertEqual(mask, 0b11111)
 
     def test_the_reserved_bits_are_the_ones_the_datasheet_lists(self) -> None:
+        # Arrange
+        printed = int(value("reservedBits"), 16)
+
+        # Act
         reserved = psr.RESERVED_MASK
 
-        self.assertEqual(reserved, 0x0FFFFF20)
+        # Assert
+        self.assertEqual(reserved, printed)
 
     def test_bit_five_is_reserved_rather_than_a_thumb_bit(self) -> None:
         held = psr.RESERVED_MASK >> 5 & 1
@@ -54,9 +60,14 @@ class TheBitsTheDatasheetDrawsTest(unittest.TestCase):
 
 class TenModesInTwoOverlappingSetsTest(unittest.TestCase):
     def test_there_are_ten_of_them(self) -> None:
-        held = len(psr.MODES)
+        # Arrange
+        modes = psr.MODES
 
-        self.assertEqual(held, 10)
+        # Act
+        held = len(modes)
+
+        # Assert
+        self.assertEqual(held, value("modesAvailable"))
 
     def test_six_are_the_ones_table_one_prints(self) -> None:
         wide = sorted(one.name for one in psr.MODES.values() if one.wide)
@@ -84,12 +95,14 @@ class TenModesInTwoOverlappingSetsTest(unittest.TestCase):
         )
 
     def test_the_twenty_six_bit_encodings_are_the_ones_the_application_note_gives(self) -> None:
-        held = {one.bits: one.name for one in psr.MODES.values() if not one.wide}
+        # Arrange
+        modes = psr.MODES.values()
 
-        self.assertEqual(
-            held,
-            {0b00000: "usr26", 0b00001: "fiq26", 0b00010: "irq26", 0b00011: "svc26"},
-        )
+        # Act
+        held = {one.bits: one.name for one in modes if not one.wide}
+
+        # Assert
+        self.assertEqual(held, {bits: name for name, bits in value("modes26bit").items()})
 
     def test_system_mode_is_not_among_them(self) -> None:
         held = psr.mode_for(0b11111)
@@ -146,8 +159,15 @@ class ReadingAndWritingTheFieldTest(unittest.TestCase):
         self.assertIsNone(held)
 
     def test_reading_an_encoding_no_mode_uses_is_refused_rather_than_guessed(self) -> None:
-        with self.assertRaises(psr.UnknownMode):
-            psr.mode_of(0b10100)
+        # Arrange
+        unused = 0b10100
+
+        # Act
+        with self.assertRaises(psr.UnknownMode, msg=quote("modeBitsOnlyDescribed")) as refused:
+            psr.mode_of(unused)
+
+        # Assert
+        self.assertIn(f"0b{unused:05b}", str(refused.exception))
 
     def test_and_the_refusal_names_the_encoding_it_was_given(self) -> None:
         with self.assertRaises(psr.UnknownMode) as caught:

@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from arm6.memory import UNSET_SEED, Memory  # noqa: E402
+from conformance.printed import value  # noqa: E402
 
 
 class NothingStartsCleanTest(unittest.TestCase):
@@ -70,11 +71,18 @@ class NothingStartsCleanTest(unittest.TestCase):
 
 class TheWholeThirtyTwoBitSpaceTest(unittest.TestCase):
     def test_the_top_of_the_address_bus_is_reachable(self) -> None:
+        # Arrange
         store = Memory()
+        top = (1 << value("addressBus")) - 4
 
-        store.write_word(0xFFFFFFFC, 0x12345678)
+        # Act
+        store.write_word(top, 0x12345678)
 
-        self.assertEqual(store.read_word(0xFFFFFFFC), 0x12345678)
+        # Assert
+        self.assertEqual(
+            (store.read_word(top), max(store.written) + 1),
+            (0x12345678, 1 << value("addressBus")),
+        )
 
     def test_an_address_past_the_bus_wraps_rather_than_growing(self) -> None:
         store = Memory()

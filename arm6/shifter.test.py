@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from arm6.shifter import ASR, LSL, LSR, ROR, by_amount, by_register  # noqa: E402
+from conformance.printed import quote  # noqa: E402
 
 
 class LogicalShiftLeftTest(unittest.TestCase):
@@ -22,9 +23,14 @@ class LogicalShiftLeftTest(unittest.TestCase):
         self.assertEqual(held, (0x0000_0002, True))
 
     def test_a_shift_of_zero_uses_rm_and_passes_the_old_carry_through(self) -> None:
-        held = by_amount(LSL, 0x1234_5678, 0, carry=True)
+        # Arrange
+        operand = 0x1234_5678
 
-        self.assertEqual(held, (0x1234_5678, True))
+        # Act
+        held = by_amount(LSL, operand, 0, carry=True)
+
+        # Assert
+        self.assertEqual(held, (operand, True), quote("lslZero"))
 
     def test_and_passes_a_cleared_carry_through_just_as_faithfully(self) -> None:
         held = by_amount(LSL, 0x1234_5678, 0, carry=False)
@@ -49,14 +55,24 @@ class LogicalShiftRightTest(unittest.TestCase):
         self.assertEqual(held, (0x0000_0001, True))
 
     def test_the_encoding_that_would_be_zero_means_thirty_two_instead(self) -> None:
-        held = by_amount(LSR, 0x8000_0000, 0, carry=False)
+        # Arrange
+        operand = 0x8000_0000
 
-        self.assertEqual(held, (0x0000_0000, True))
+        # Act
+        held = by_amount(LSR, operand, 0, carry=False)
+
+        # Assert
+        self.assertEqual(held, (0x0000_0000, True), quote("lsrZero"))
 
     def test_and_that_encoding_takes_its_carry_from_the_top_bit(self) -> None:
-        held = by_amount(LSR, 0x7FFF_FFFF, 0, carry=True)
+        # Arrange
+        operand = 0x7FFF_FFFF
 
-        self.assertEqual(held, (0x0000_0000, False))
+        # Act
+        held = by_amount(LSR, operand, 0, carry=True)
+
+        # Assert
+        self.assertEqual(held, (0x0000_0000, False), quote("lsrZero"))
 
 
 class ArithmeticShiftRightTest(unittest.TestCase):
@@ -88,14 +104,24 @@ class RotateRightTest(unittest.TestCase):
         self.assertEqual(held, (0xF000_000F, True))
 
     def test_the_encoding_that_would_be_zero_is_a_rotate_through_the_carry(self) -> None:
-        held = by_amount(ROR, 0x0000_0002, 0, carry=True)
+        # Arrange
+        operand = 0x0000_0002
 
-        self.assertEqual(held, (0x8000_0001, False))
+        # Act
+        held = by_amount(ROR, operand, 0, carry=True)
+
+        # Assert
+        self.assertEqual(held, (0x8000_0001, False), quote("rrx"))
 
     def test_and_that_rotate_takes_its_carry_out_from_the_bottom_bit(self) -> None:
-        held = by_amount(ROR, 0x0000_0003, 0, carry=False)
+        # Arrange
+        operand = 0x0000_0003
 
-        self.assertEqual(held, (0x0000_0001, True))
+        # Act
+        held = by_amount(ROR, operand, 0, carry=False)
+
+        # Assert
+        self.assertEqual(held, (0x0000_0001, True), quote("rrx"))
 
 
 class TheSevenCasesForAnAmountOfThirtyTwoOrMoreTest(unittest.TestCase):
@@ -164,9 +190,14 @@ class ARegisterSpecifiedAmountReadsOneByteTest(unittest.TestCase):
         self.assertEqual(held, (0x0000_0002, True))
 
     def test_only_the_bottom_byte_of_the_register_decides_the_amount(self) -> None:
-        held = by_register(LSL, 0x0000_0001, 0xFF00 | 4, carry=False)
+        # Arrange
+        amount = 0xFF00 | 4
 
-        self.assertEqual(held, (0x0000_0010, False))
+        # Act
+        held = by_register(LSL, 0x0000_0001, amount, carry=False)
+
+        # Assert
+        self.assertEqual(held, (0x0000_0010, False), quote("registerShiftByte"))
 
 
 class TheFourShiftCodesTest(unittest.TestCase):

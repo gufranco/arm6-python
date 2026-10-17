@@ -161,6 +161,8 @@ arm6/
 conformance/
   family.test.py  the family standard, held to this repository
   hardware.json   every fact, with the sentence it came from and its page
+  hardware.test.py the facts no test beside a module already held
+  printed.py      reads a fact out of hardware.json by its key, for the tests that hold it
   divergences.json where sources part, and what would settle each
   suites.json     the corpus pin, and every filter entry with its sentence
   quotes.py       every quoted sentence, against the page it cites
