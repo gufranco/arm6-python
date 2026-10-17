@@ -8,7 +8,7 @@ English &nbsp;|&nbsp; [日本語](README.ja.md) &nbsp;|&nbsp; [简体中文](REA
 [![Release](https://img.shields.io/github/v/release/gufranco/arm6-python)](https://github.com/gufranco/arm6-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**424,220** recorded cases compared, **0** disagreements, **62** quoted sentences placed on the page they cite, **1** part, **1,121** tests, **100%** statement and branch coverage, no dependencies
+**424,220** recorded cases compared, **0** disagreements, **62** quoted sentences placed on the page they cite, **1** part, **1,123** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from arm6 import Cpu, Memory
