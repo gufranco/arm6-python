@@ -8,7 +8,7 @@ Pythonで書かれたARM60プロセッサです。1命令または1バスサイ�
 [![Release](https://img.shields.io/github/v/release/gufranco/arm6-python)](https://github.com/gufranco/arm6-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-記録ケース**424,220**件を比較、不一致**0**件、引用文**62**件を出典ページ上で照合、パーツ**1**種、テスト**1,102**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
+記録ケース**424,220**件を比較、不一致**0**件、引用文**62**件を出典ページ上で照合、パーツ**1**種、テスト**1,103**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
 
 ```python
 from arm6 import Cpu, Memory
