@@ -139,6 +139,32 @@ the case it exists for.
 - A check nobody has seen fail is not known to work. Drive every new check
   against input that should fail it before keeping it.
 
+The linter's ignores in [`pyproject.toml`](pyproject.toml) carry no comments, so
+their reasons live here:
+
+- `N818`: some exceptions are control flow signals rather than failures. The
+  standard library names those without the suffix too, and the ones that report
+  a failure do end in `Error`.
+- `N999` in tests: a test file sits beside its module and is named after it with
+  a dot, so a module and its tests are read together.
+- `T201` in `conformance/`: these are command line tools, and printing is their
+  output.
+- `BLE001` and `T201` in `environment.py`: a check that throws has to become a
+  line in the report rather than end the run, and the report is the product.
+- `BLE001` and `T201` in the doctor: it has to survive whatever a check throws
+  and report it. A narrower catch would let a traceback take the rest of the
+  report with it.
+
+The coverage exclusions carry none either:
+
+- `if __name__ == "__main__":`: the guard hands argv to a function that is
+  itself tested, and importing the module to cover it would run the tool.
+- `if TYPE_CHECKING:`: the block never runs. Python 3.14 drops it before
+  coverage sees it and earlier versions do not, so counting it would make the
+  gate mean something different on each runtime.
+- `^\s*\.\.\.$` and `: \.\.\.$`: a protocol method's ellipsis is a contract the
+  type checker reads and the runtime never runs.
+
 ## Layout
 
 ```text
