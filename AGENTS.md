@@ -164,6 +164,11 @@ The coverage exclusions carry none either:
   gate mean something different on each runtime.
 - `^\s*\.\.\.$` and `: \.\.\.$`: a protocol method's ellipsis is a contract the
   type checker reads and the runtime never runs.
+- `@unittest\.skipUnless\(A_PART,`,
+  `@unittest\.skipUnless\(A_PART and BUILDABLE,` and
+  `^def accounts_for_a_reset\(` in the coverage exclusions: this member is not a
+  part, so the family tests that build a `Chip` and account for its reset are
+  skipped here and their bodies never run.
 
 ## Layout
 
@@ -186,7 +191,9 @@ arm6/
   doctor.py       what is actually on this machine, printed for a bug report
   version.py      rewritten by the release job and by nothing else
 conformance/
-  family.test.py  the family standard, held to this repository
+  family_*.test.py the family standard, held to this repository, one topic a file
+  family_member.py what this member answers to them
+  family_shared.py what more than one of them reads
   hardware.json   every fact, with the sentence it came from and its page
   hardware.test.py the facts no test beside a module already held
   printed.py      reads a fact out of hardware.json by its key, for the tests that hold it
