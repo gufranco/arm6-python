@@ -8,7 +8,7 @@
 [![Release](https://img.shields.io/github/v/release/gufranco/arm6-python)](https://github.com/gufranco/arm6-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-已比对 **424,220** 个录制用例，**0** 处不一致，**62** 句引文已定位到所引用的页面，**1** 个器件，**1,097** 个测试，**100%** 语句与分支覆盖率，无依赖
+已比对 **424,220** 个录制用例，**0** 处不一致，**62** 句引文已定位到所引用的页面，**1** 个器件，**1,102** 个测试，**100%** 语句与分支覆盖率，无依赖
 
 ```python
 from arm6 import Cpu, Memory
@@ -90,7 +90,7 @@ python3 arm6/doctor.py
 | `tally` | 累计总数，类型为 `Cycles`，跨复位保留 |
 | `bus.cycles` | 上一条指令的每个总线周期对应一个 `Cycle`：`kind`、`address`、`nopc`、`nbw`、`nrw`、`ntrans`、`lock`、`data`。`kind` 是未接协处理器的器件所驱动的表 3 周期类型之一：N、S 或 I，带有 `letter`、`name`、`nmreq`、`seq` 和 `touches_memory` |
 | `irq_line`, `fiq_line` | 每条中断线的电平 |
-| `on_cycle` | 在每个总线周期之后以器件为参数运行的可调用对象，或 `None`。由 `Clock` 设置 |
+| `on_cycle` | 在每个总线周期结束、该周期的工作完成之后以器件为参数运行的可调用对象，或 `None`。由 `Clock` 设置 |
 | `seed`, `bigend`, `lateabt` | 构造函数参数 |
 
 ```python
@@ -313,7 +313,7 @@ except ClockClosed as refused:
 this clock has been closed None
 ```
 
-在 `fill=0` 下，每个字都是 1 周期的 `andeq`。四个节拍完成三条指令，并把第四条保持在它唯一的周期内。
+在 `fill=0` 下，每个字都是 1 周期的 `andeq`。四个节拍运行四条指令。节拍要等其周期的全部工作完成后才停下，所以无论之后是否关闭时钟，器件的状态都与调用四次 `step()` 后相同。
 
 ## 型号
 

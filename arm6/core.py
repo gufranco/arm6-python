@@ -32,6 +32,7 @@ RESET_LOW_CYCLES = 2
 
 class Cpu:
     __slots__ = (
+        "_open",
         "bigend",
         "bus",
         "cycles",
@@ -86,6 +87,7 @@ class Cpu:
         self.irq_line = False
         self.fiq_line = False
         self.on_cycle = None
+        self._open = False
 
     @override
     def __repr__(self) -> str:
@@ -105,6 +107,7 @@ class Cpu:
         lock: int = 0,
         data: int | None = None,
     ) -> Cycle:
+        self.settle()
         cycle = Cycle(
             kind,
             address=address,
@@ -116,13 +119,20 @@ class Cpu:
             data=data,
         )
         self.bus.add(cycle)
+        self._open = True
+        return cycle
+
+    def settle(self) -> None:
+        if not self._open:
+            return
+        self._open = False
         self.cycles += 1
         if self.on_cycle is not None:
             self.on_cycle(self)
-        return cycle
 
     def prefetch(self, kind: CycleType, address: int) -> Cycle:
         address &= WORD_MASK
+        self.settle()
         return self.spend(kind, address, nopc=0, data=self.memory.read_word(address))
 
     def reset(self, low_cycles: int = RESET_LOW_CYCLES) -> Cpu:
@@ -142,6 +152,7 @@ class Cpu:
         self.steps = 0
         self.spent = self.bus.spent()
         self.tally = self.tally + self.spent
+        self.settle()
         return self
 
     def enter(self, vector: int) -> None:
@@ -213,6 +224,7 @@ class Cpu:
             self.run_one()
         self.spent = self.bus.spent()
         self.tally = self.tally + self.spent
+        self.settle()
         return self.spent.total
 
     def run_one(self) -> None:

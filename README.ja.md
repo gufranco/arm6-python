@@ -8,7 +8,7 @@ Pythonで書かれたARM60プロセッサです。1命令または1バスサイ�
 [![Release](https://img.shields.io/github/v/release/gufranco/arm6-python)](https://github.com/gufranco/arm6-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-記録ケース**424,220**件を比較、不一致**0**件、引用文**62**件を出典ページ上で照合、パーツ**1**種、テスト**1,097**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
+記録ケース**424,220**件を比較、不一致**0**件、引用文**62**件を出典ページ上で照合、パーツ**1**種、テスト**1,102**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
 
 ```python
 from arm6 import Cpu, Memory
@@ -90,7 +90,7 @@ python3 arm6/doctor.py
 | `tally` | 累計を`Cycles`で表したもので、リセットをまたいで保持されます |
 | `bus.cycles` | 最後の命令のバスサイクルごとに1つの`Cycle`です。`kind`、`address`、`nopc`、`nbw`、`nrw`、`ntrans`、`lock`、`data`を持ちます。`kind`はコプロセッサを接続しないパーツが駆動する表3のサイクルタイプ（N、S、I）のいずれかで、`letter`、`name`、`nmreq`、`seq`、`touches_memory`を持ちます |
 | `irq_line`、`fiq_line` | 各割り込みラインのレベルです |
-| `on_cycle` | バスサイクルごとにパーツを引数として呼ばれる呼び出し可能オブジェクト、または`None`です。`Clock`がこれを設定します |
+| `on_cycle` | 各バスサイクルの終わり、そのサイクルの処理の後に、パーツを引数として呼ばれる呼び出し可能オブジェクト、または`None`です。`Clock`がこれを設定します |
 | `seed`、`bigend`、`lateabt` | コンストラクタの引数です |
 
 ```python
@@ -313,7 +313,7 @@ except ClockClosed as refused:
 this clock has been closed None
 ```
 
-`fill=0`では、すべてのワードが1サイクルの`andeq`です。4回のティックで3命令が完了し、4番目の命令はその唯一のサイクルの中で保持されます。
+`fill=0`では、すべてのワードが1サイクルの`andeq`です。4回のティックで4命令を実行します。ティックはそのサイクルの処理がすべて終わってから止まるため、その後クロックを閉じても閉じなくても、パーツは`step()`を4回呼んだときと同じ状態です。
 
 ## モデル
 

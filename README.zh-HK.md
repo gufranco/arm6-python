@@ -8,7 +8,7 @@
 [![Release](https://img.shields.io/github/v/release/gufranco/arm6-python)](https://github.com/gufranco/arm6-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-比對 **424,220** 個錄製案例，**0** 處不一致，**62** 句引文定位到所引用的頁面，**1** 個型號，**1,097** 個測試，**100%** 語句及分支覆蓋率，無任何依賴
+比對 **424,220** 個錄製案例，**0** 處不一致，**62** 句引文定位到所引用的頁面，**1** 個型號，**1,102** 個測試，**100%** 語句及分支覆蓋率，無任何依賴
 
 ```python
 from arm6 import Cpu, Memory
@@ -90,7 +90,7 @@ python3 arm6/doctor.py
 | `tally` | 累計總數，類型為 `Cycles`，跨重設保留 |
 | `bus.cycles` | 上一條指令每個總線週期對應一個 `Cycle`：`kind`、`address`、`nopc`、`nbw`、`nrw`、`ntrans`、`lock`、`data`。`kind` 是未接協處理器的型號所驅動的表 3 週期類型之一：N、S 或 I，帶有 `letter`、`name`、`nmreq`、`seq` 及 `touches_memory` |
 | `irq_line`、`fiq_line` | 每條中斷線的電平 |
-| `on_cycle` | 每個總線週期後以型號為參數執行的可調用物件，或 `None`。由 `Clock` 設定 |
+| `on_cycle` | 在每個總線週期結束、該週期的工作完成之後以型號為參數執行的可調用物件，或 `None`。由 `Clock` 設定 |
 | `seed`、`bigend`、`lateabt` | 建構函數的參數 |
 
 ```python
@@ -313,7 +313,7 @@ except ClockClosed as refused:
 this clock has been closed None
 ```
 
-使用 `fill=0` 時，每個字都是 1 週期的 `andeq`。四次節拍完成三條指令，並把第四條保持在其唯一的週期之內。
+使用 `fill=0` 時，每個字都是 1 週期的 `andeq`。四次節拍執行四條指令。節拍要等其週期的全部工作完成後才停下，所以無論之後是否關閉時鐘，型號的狀態都與呼叫四次 `step()` 後相同。
 
 ## 型號
 

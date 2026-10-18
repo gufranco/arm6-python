@@ -102,6 +102,7 @@ def single_transfer(cpu: Cpu, word: int) -> None:
             if destination == 15
             else cpu.registers.read(destination)
         )
+        cpu.settle()
         if byte:
             cpu.memory.write_byte(address, value & 0xFF)
         else:
@@ -121,6 +122,7 @@ def single_transfer(cpu: Cpu, word: int) -> None:
 
 
 def _load_register(cpu: Cpu, word: int, address: int, destination: int, byte: bool) -> None:
+    cpu.settle()
     if byte:
         value = cpu.memory.read_byte(address)
     else:
@@ -186,6 +188,7 @@ def _bank(cpu: Cpu, index: int, force_user: bool, value: int | None = None) -> i
 
 
 def _load_many(cpu: Cpu, listed: tuple[int, ...], addresses: list[int], force_user: bool) -> None:
+    cpu.settle()
     values = [cpu.memory.read_word(one) for one in addresses]
     last = len(listed) - 1
     for place, (index, address) in enumerate(zip(listed, addresses, strict=True)):
@@ -223,6 +226,7 @@ def _store_many(
             value = written
         else:
             value = _bank(cpu, index, force_user)
+        cpu.settle()
         cpu.memory.write_word(address, value)
         kind = NONSEQUENTIAL if place == last else SEQUENTIAL
         cpu.spend(kind, address, nopc=1, nrw=1, data=value)
@@ -235,8 +239,10 @@ def swap(cpu: Cpu, word: int) -> None:
     source = cpu.registers.read(word & 0xF)
 
     cpu.prefetch(NONSEQUENTIAL, cpu.registers.pc + PREFETCH)
+    cpu.settle()
     held = cpu.memory.read_byte(base) if byte else rotate_load(cpu.memory.read_word(base), base)
     cpu.spend(NONSEQUENTIAL, base, nopc=1, nbw=0 if byte else 1, lock=1, data=held)
+    cpu.settle()
     if byte:
         cpu.memory.write_byte(base, source & 0xFF)
     else:

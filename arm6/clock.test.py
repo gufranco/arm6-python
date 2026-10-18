@@ -15,6 +15,22 @@ from arm6 import Clock, ClockClosed, Cpu, Memory, UnspecifiedEncoding  # noqa: E
 MOVE = 0xE1A00001
 BRANCH_WITH_LINK = 0xEB000000
 LONG_MULTIPLY = 0xE0812394
+EVERY_KIND_OF_ACCESS = (
+    0xE3A0002A,
+    0xE2801001,
+    0xE3A02C01,
+    0xE5821000,
+    0xE5923000,
+    0xE5C20008,
+    0xE5D29008,
+    0xE8A20003,
+    0xE9320030,
+    0xE1026090,
+    0xE0070190,
+    0xEB000000,
+    0xE1A00000,
+    0xE1A08011,
+)
 
 INSTRUCTIONS = 4
 
@@ -57,6 +73,38 @@ def clocked_then_closed(budget: int) -> tuple[int, int]:
     with Clock(held) as clock:
         clock.run_for(budget)
     return held.steps, held.cycles
+
+
+def observed(held: Cpu) -> tuple[Any, ...]:
+    return (
+        held.registers.pc,
+        tuple(held.registers.read(index) for index in range(15)),
+        held.registers.cpsr,
+        held.steps,
+        held.cycles,
+        held.spent,
+        held.tally,
+        tuple(repr(one) for one in held.bus.cycles),
+        dict(held.memory.written),
+    )
+
+
+def after_steps(words: tuple[int, ...], instructions: int) -> tuple[int, tuple[Any, ...]]:
+    held = machine(*words)
+    spent = sum(held.step() for _ in range(instructions))
+    return spent, observed(held)
+
+
+def after_ticks(words: tuple[int, ...], budget: int, closing: bool) -> tuple[Any, ...]:
+    held = machine(*words)
+    clock = Clock(held)
+    try:
+        clock.run_for(budget)
+        if closing:
+            clock.close()
+        return observed(held)
+    finally:
+        clock.close()
 
 
 class OneCycleAtATimeTest(unittest.TestCase):
@@ -201,6 +249,103 @@ class CountedLikeAStepTest(unittest.TestCase):
 
         # Assert
         self.assertEqual((found, expected), (("returned", (4, 4)), (4, 4)))
+
+
+class TheLastCycleOfAnInstructionFinishesItTest(unittest.TestCase):
+    def test_a_clock_leaves_the_state_the_same_steps_leave(self) -> None:
+        # Arrange
+        budget, expected = after_steps((MOVE,) * 8, INSTRUCTIONS)
+
+        # Act
+        found = within(lambda: after_ticks((MOVE,) * 8, budget, closing=False))
+
+        # Assert
+        self.assertEqual(found, ("returned", expected))
+
+    def test_and_so_does_a_clock_closed_on_that_cycle(self) -> None:
+        # Arrange
+        budget, expected = after_steps((MOVE,) * 8, INSTRUCTIONS)
+
+        # Act
+        found = within(lambda: after_ticks((MOVE,) * 8, budget, closing=True))
+
+        # Assert
+        self.assertEqual(found, ("returned", expected))
+
+    def test_through_loads_stores_a_swap_a_multiply_and_a_branch(self) -> None:
+        # Arrange
+        budget, expected = after_steps(EVERY_KIND_OF_ACCESS, len(EVERY_KIND_OF_ACCESS))
+
+        # Act
+        found = within(lambda: after_ticks(EVERY_KIND_OF_ACCESS, budget, closing=False))
+
+        # Assert
+        self.assertEqual(found, ("returned", expected))
+
+    def test_and_through_them_once_the_clock_is_closed(self) -> None:
+        # Arrange
+        budget, expected = after_steps(EVERY_KIND_OF_ACCESS, len(EVERY_KIND_OF_ACCESS))
+
+        # Act
+        found = within(lambda: after_ticks(EVERY_KIND_OF_ACCESS, budget, closing=True))
+
+        # Assert
+        self.assertEqual(found, ("returned", expected))
+
+
+class Watched:
+    __slots__ = ("held", "inner", "paused", "seen")
+
+    def __init__(self, inner: Memory) -> None:
+        self.inner = inner
+        self.held: list[Cpu] = []
+        self.paused = 0
+        self.seen: list[tuple[int, int]] = []
+
+    def noted(self, address: int) -> int:
+        for part in self.held:
+            self.seen.append((self.paused, part.tally.total + len(part.bus.cycles)))
+        return address
+
+    def read_byte(self, address: int) -> int:
+        return self.inner.read_byte(self.noted(address))
+
+    def read_word(self, address: int) -> int:
+        return self.inner.read_word(self.noted(address))
+
+    def write_byte(self, address: int, value: int) -> None:
+        self.inner.write_byte(self.noted(address), value)
+
+    def write_word(self, address: int, value: int) -> None:
+        self.inner.write_word(self.noted(address), value)
+
+
+def watched_run(words: tuple[int, ...]) -> list[tuple[int, int]]:
+    image = b"".join(one.to_bytes(4, "little") for one in words)
+    memory = Watched(Memory(image=image, fill=0))
+    held = Cpu("arm60", memory, fill=0)  # type: ignore[arg-type]
+    held.registers.pc = 0
+    memory.held.append(held)
+
+    def paused(part: Cpu) -> None:
+        memory.paused += 1
+
+    held.on_cycle = paused
+    for _ in words:
+        held.step()
+    return memory.seen
+
+
+class EveryAccessStaysOnItsOwnCycleTest(unittest.TestCase):
+    def test_no_access_is_made_before_the_cycle_ahead_of_it_has_paused(self) -> None:
+        # Arrange
+        words = EVERY_KIND_OF_ACCESS
+
+        # Act
+        seen = watched_run(words)
+
+        # Assert
+        self.assertEqual([paused for paused, _ in seen], [due for _, due in seen])
 
 
 class AFailureInsideTheWorkerReachesTheDriverTest(unittest.TestCase):
