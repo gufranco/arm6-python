@@ -204,13 +204,13 @@ class Cpu:
 
     def step(self) -> int:
         self.bus.clear()
+        self.steps += 1
         if self.fiq_line and not psr.flag(self.registers.cpsr, psr.F_BIT):
             self.take("fiq", "fiq32", self.registers.pc + PREFETCH, mask_fiq=True)
         elif self.irq_line and not psr.flag(self.registers.cpsr, psr.I_BIT):
             self.take("irq", "irq32", self.registers.pc + PREFETCH)
         else:
             self.run_one()
-        self.steps += 1
         self.spent = self.bus.spent()
         self.tally = self.tally + self.spent
         return self.spent.total

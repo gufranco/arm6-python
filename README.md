@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/arm6-python)](https://github.com/gufranco/arm6-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**424,220** recorded cases compared, **0** disagreements, **62** quoted sentences placed on the page they cite, **1** part, **1,090** tests, **100%** statement and branch coverage, no dependencies
+**424,220** recorded cases compared, **0** disagreements, **62** quoted sentences placed on the page they cite, **1** part, **1,092** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from arm6 import Cpu, Memory
@@ -309,7 +309,7 @@ except ClockClosed as refused:
 ```
 
 ```
-4 3 False
+4 4 False
 this clock has been closed None
 ```
 

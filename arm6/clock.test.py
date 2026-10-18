@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import sys
+import threading
 import unittest
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -13,12 +16,47 @@ MOVE = 0xE1A00001
 BRANCH_WITH_LINK = 0xEB000000
 LONG_MULTIPLY = 0xE0812394
 
+INSTRUCTIONS = 4
+
+BUDGET = 4
+
+PATIENCE_SECONDS = 10.0
+
 
 def machine(*words: int) -> Cpu:
     image = b"".join(one.to_bytes(4, "little") for one in words)
     held = Cpu("arm60", Memory(image=image, fill=0), fill=0)
     held.registers.pc = 0
     return held
+
+
+def stepped(instructions: int) -> tuple[int, int]:
+    held = machine(*([MOVE] * 8))
+    for _ in range(instructions):
+        held.step()
+    return held.steps, held.cycles
+
+
+def within(call: Callable[[], Any]) -> tuple[str, Any]:
+    outcome: list[tuple[str, Any]] = []
+
+    def attempt() -> None:
+        try:
+            outcome.append(("returned", call()))
+        except Exception as raised:  # noqa: BLE001
+            outcome.append(("raised", raised))
+
+    worker = threading.Thread(target=attempt, daemon=True)
+    worker.start()
+    worker.join(PATIENCE_SECONDS)
+    return outcome[0] if outcome else ("still running", None)
+
+
+def clocked_then_closed(budget: int) -> tuple[int, int]:
+    held = machine(*([MOVE] * 8))
+    with Clock(held) as clock:
+        clock.run_for(budget)
+    return held.steps, held.cycles
 
 
 class OneCycleAtATimeTest(unittest.TestCase):
@@ -96,11 +134,13 @@ class ClosingItTest(unittest.TestCase):
         clock.close()
 
         # Act
-        with self.assertRaises(ClockClosed) as caught:
-            clock.tick()
+        kind, raised = within(clock.tick)
 
         # Assert
-        self.assertEqual(str(caught.exception), "this clock has been closed")
+        self.assertEqual(
+            (kind, type(raised), str(raised)),
+            ("raised", ClockClosed, "this clock has been closed"),
+        )
 
     def test_closing_it_twice_is_not_an_error(self) -> None:
         # Arrange
@@ -130,10 +170,37 @@ class ClosingItTest(unittest.TestCase):
         clock.close()
 
         # Act
-        held = list(clock)
+        held = within(lambda: list(clock))
 
         # Assert
-        self.assertEqual(held, [])
+        self.assertEqual(held, ("returned", []))
+
+
+class CountedLikeAStepTest(unittest.TestCase):
+    def test_a_clock_counts_the_same_instructions_and_cycles_as_stepping(self) -> None:
+        # Arrange
+        held = machine(*([MOVE] * 8))
+        clock = Clock(held)
+        self.addCleanup(clock.close)
+
+        # Act
+        clock.run_for(BUDGET)
+
+        # Assert
+        self.assertEqual(
+            ((held.steps, held.cycles), stepped(INSTRUCTIONS)),
+            ((4, 4), (4, 4)),
+        )
+
+    def test_and_still_does_once_the_clock_is_closed(self) -> None:
+        # Arrange
+        expected = stepped(INSTRUCTIONS)
+
+        # Act
+        found = within(lambda: clocked_then_closed(BUDGET))
+
+        # Assert
+        self.assertEqual((found, expected), (("returned", (4, 4)), (4, 4)))
 
 
 class AFailureInsideTheWorkerReachesTheDriverTest(unittest.TestCase):
