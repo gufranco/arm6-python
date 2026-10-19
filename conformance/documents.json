@@ -54,6 +54,34 @@
       "sha256": "41239bc21c8e33751bdc5a0977105c525f120f781cf8530fbf533f4ba1d868bb",
       "bytes": 8729,
       "pages": 1
+    },
+    {
+      "file": "manufacturer/arm_ddi0100e.pdf",
+      "rung": 1,
+      "publisher": "ARM Limited",
+      "title": "ARM Architecture Reference Manual, ARM DDI 0100E",
+      "date": "2000",
+      "retrievedFrom": "https://www.cl.cam.ac.uk/teaching/0405/ECADArch/datasheets/arm.pdf",
+      "readOn": "2026-10-19",
+      "covers": ["arm60"],
+      "settles": "The shifter carry after an immediate operand is rotated, which section A5.1.3 gives for every architecture version and the ARM60 datasheet leaves unstated. Section A3.13 also says what architecture version 3 makes of an encoding no defined instruction matches: UNDEFINED in the undefined instruction space and UNPREDICTABLE elsewhere, which is why it does not answer what the silicon does with one.",
+      "sha256": "fa405a69d371c533f91aab331c8265c1d50ad0f5fe856f232f3a05f93f687114",
+      "bytes": 13344133,
+      "pages": 811
+    },
+    {
+      "file": "manufacturer/vlsi_arm_family_data_manual_1990.pdf",
+      "rung": 1,
+      "publisher": "VLSI Technology, Inc.",
+      "title": "Acorn RISC Machine (ARM) Family Data Manual",
+      "date": "1990",
+      "retrievedFrom": "https://bitsavers.mirrorservice.org/components/vti/1990_Acorn_RISC_Machine_Family_Data_Manual.pdf",
+      "readOn": "2026-10-19",
+      "covers": [],
+      "settles": "Nothing here. It was read for the ARM2aS macrocell that Application Note 11 refers unobserved restrictions to, and it documents the VL86C010 and the VL86C020 only. It names no ARM2aS, and its multiply sections and undefined instruction figures say nothing of a multiply encoding with bit 5 or bit 6 set.",
+      "sha256": "f3a524aeec44ab450806f329e88af5dc2601c4ca027fca0ddec04d88514fc090",
+      "bytes": 14512698,
+      "pages": 322
     }
   ]
 }

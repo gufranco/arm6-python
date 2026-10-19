@@ -459,15 +459,17 @@ python3 arm6/core.test.py
 
 これらの文書はいずれも再配布可能ではなく、このリポジトリには含まれていません。個々の文は、印刷されているページとともに[`conformance/hardware.json`](conformance/hardware.json)に引用されています。各行にはページ数と、ファイルのSHA-256の先頭16桁の16進数を示しています。
 
-| 文書                                                                                                                                                           | 日付     | ページ数 | SHA-256            |
-| :------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------- | -------: | :----------------- |
-| [GEC Plessey Semiconductors, _ARM60 Datasheet_, Issue 0.81](https://3dodev.com/_media/documentation/hardware/arm60_datasheet_-_gec_plessey_semiconductors.pdf) | 1993     |       83 | `315dbff7b6259a73` |
-| [Advanced RISC Machines, _ARM610 Data Sheet_, ARM DDI 0004D](https://bitsavers.org/pdf/acorn/ARM_DDI_0004D_ARM610_Data_Sheet_Aug93.pdf)                        | 1993-08  |      134 | `76f13ffe2bc20774` |
-| [Advanced RISC Machines, _Application Note 11: Differences Between ARM6 and Earlier ARM Processors_](https://home.marutan.net/rpcemu/Apps11vC.html)            | 日付なし |        1 | `41239bc21c8e3375` |
+| 文書                                                                                                                                                                | 日付     | ページ数 | SHA-256            |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------- | -------: | :----------------- |
+| [GEC Plessey Semiconductors, _ARM60 Datasheet_, Issue 0.81](https://3dodev.com/_media/documentation/hardware/arm60_datasheet_-_gec_plessey_semiconductors.pdf)      | 1993     |       83 | `315dbff7b6259a73` |
+| [Advanced RISC Machines, _ARM610 Data Sheet_, ARM DDI 0004D](https://bitsavers.org/pdf/acorn/ARM_DDI_0004D_ARM610_Data_Sheet_Aug93.pdf)                             | 1993-08  |      134 | `76f13ffe2bc20774` |
+| [Advanced RISC Machines, _Application Note 11: Differences Between ARM6 and Earlier ARM Processors_](https://home.marutan.net/rpcemu/Apps11vC.html)                 | 日付なし |        1 | `41239bc21c8e3375` |
+| [ARM Limited, _ARM Architecture Reference Manual_, ARM DDI 0100E](https://www.cl.cam.ac.uk/teaching/0405/ECADArch/datasheets/arm.pdf)                               | 2000     |      811 | `fa405a69d371c533` |
+| [VLSI Technology, _Acorn RISC Machine (ARM) Family Data Manual_](https://bitsavers.mirrorservice.org/components/vti/1990_Acorn_RISC_Machine_Family_Data_Manual.pdf) | 1990     |      322 | `f3a524aeec44ab45` |
 
-[`conformance/documents.json`](conformance/documents.json)には、各文書の完全なダイジェスト、バイト数、取得可能なアドレスが記載されています。`python3 -m conformance.documents`は3つすべてをgitが無視する`docs/`にダウンロードし、ダイジェストが異なるファイルは拒否します。`--check`はすでにあるコピーを検証します。上にリンクしたアドレスは単純な取得に403を返すため、マニフェストはARM610データシートをミラーから取得します。どちらも同じバイト列を提供します。
+[`conformance/documents.json`](conformance/documents.json)には、各文書の完全なダイジェスト、バイト数、取得可能なアドレスが記載されています。`python3 -m conformance.documents`は5つすべてをgitが無視する`docs/`にダウンロードし、ダイジェストが異なるファイルは拒否します。`--check`はすでにあるコピーを検証します。上にリンクしたアドレスは単純な取得に403を返すため、マニフェストはARM610データシートをミラーから取得します。どちらも同じバイト列を提供します。
 
-判断の基準はARM60データシートです。このパーツのバスを命令ごと、サイクルごとに示している文書は、見つかった中でこれだけです。ARM610データシートは命令セットとプログラマモデルについての第2の証拠であり、それ以外には使いません。そのバスの章は2つのクロック、2つのサイクル種別、キャッシュを記述しているからです。Application Note 11は、両方のデータシートが省いている4つの26ビットモードのエンコーディングを記載している、見つかった中で唯一の文書です。
+判断の基準はARM60データシートです。このパーツのバスを命令ごと、サイクルごとに示している文書は、見つかった中でこれだけです。ARM610データシートは命令セットとプログラマモデルについての第2の証拠であり、それ以外には使いません。そのバスの章は2つのクロック、2つのサイクル種別、キャッシュを記述しているからです。Application Note 11は、両方のデータシートが省いている4つの26ビットモードのエンコーディングを記載している、見つかった中で唯一の文書です。ARM DDI 0100Eは、ARM60データシートが省いている即値ローテート後のシフタのキャリーを記載しています。VLSIのデータマニュアルはARM2aSマクロセルを求めて読みましたが、別のパーツを記述しているため、ここでは何も決めません。
 
 [SingleStepTests/ARM7TDMI](https://github.com/SingleStepTests/ARM7TDMI)が記録ケースを提供しています。そのコミットとすべてのフィルタ項目は[`conformance/suites.json`](conformance/suites.json)にあります。
 

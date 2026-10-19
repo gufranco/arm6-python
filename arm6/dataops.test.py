@@ -242,7 +242,7 @@ class TheImmediateOperandTest(unittest.TestCase):
 
         # Assert
         held = [(one.registers.read(0), flag(one, C_BIT)) for one in parts]
-        self.assertEqual(held, [(0xFF, False), (0x80000000, True)])
+        self.assertEqual(held, [(0xFF, False), (0x80000000, True)], quote("immediateRotateCarry"))
 
     def test_an_unrotated_immediate_leaves_the_carry_alone(self) -> None:
         # Arrange
@@ -252,7 +252,7 @@ class TheImmediateOperandTest(unittest.TestCase):
         held.step()
 
         # Assert
-        self.assertTrue(flag(held, C_BIT))
+        self.assertTrue(flag(held, C_BIT), quote("immediateRotateCarry"))
 
     def test_the_rotate_field_turns_the_byte_by_twice_its_value(self) -> None:
         # Arrange

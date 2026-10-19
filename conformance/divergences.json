@@ -17,13 +17,13 @@
     {
       "id": "immediateRotateCarry",
       "topic": "What the shifter carry is after an immediate operand is rotated",
-      "status": "open",
+      "status": "closed",
       "severity": "low",
-      "whatDisagrees": "Nothing disagrees. The document stops. Section 7.3.3 gives the immediate value and the rotate and says nothing about the shifter's carry output, while section 7.3.1 says a logical operation takes its C flag from the barrel shifter.",
+      "whatDisagrees": "Nothing disagrees. The ARM60 datasheet stops. Section 7.3.3 gives the immediate value and the rotate and says nothing about the shifter's carry output, while section 7.3.1 says a logical operation takes its C flag from the barrel shifter.",
       "whyItMatters": "Every logical operation with an immediate operand and the S bit set writes a C flag that the datasheet does not specify.",
-      "packageFollows": "corpus",
-      "reasoning": "A rotate of zero passes the old flag through and any other rotate takes bit 31 of the result, which is what the filtered corpus shows.",
-      "wouldSettleIt": "A sentence in a document, or a measurement on real silicon of the C flag after an immediate rotate."
+      "packageFollows": "document",
+      "reasoning": "A rotate of zero passes the old flag through and any other rotate takes bit 31 of the result. The filtered corpus showed it first; ARM DDI 0100E prints it.",
+      "closedBy": "ARM DDI 0100E section A5.1.3, page A5-6, file page 222, under Architecture version: All. Quoted in conformance/hardware.json as immediateRotateCarry and held by two tests that already passed."
     },
     {
       "id": "unspecifiedEncodings",
@@ -33,8 +33,11 @@
       "whatDisagrees": "The note beneath Figure 28 says some instruction codes are not defined but do not cause the undefined instruction trap, giving a multiply with bit 5 or bit 6 set as its example, and does not say what they do. Application Note 11 says the behaviour of an unobserved restriction is the ARM2aS macrocell's.",
       "whyItMatters": "A program that executes one of these gets an answer from the silicon and no answer from this package.",
       "packageFollows": "neither",
-      "reasoning": "It refuses, naming the encoding. Choosing a behaviour would mean inventing one, and the document that would settle it is the VTI data book for the ARM2aS macrocell, which is not pinned here.",
-      "wouldSettleIt": "The VTI ARM data book, read for the ARM2aS macrocell's answer to each of these encodings."
+      "reasoning": "It refuses, naming the encoding. Choosing a behaviour would mean inventing one. The architecture manual declines to choose too, in the rule quoted here, so no document of the architecture will answer it.",
+      "architectureQuote": "In ARM architecture version 3 and below, if the decode bits of an instruction are not equal to those of any defined instruction, then the instruction is: UNDEFINED if it is in the undefined instruction space UNPREDICTABLE if it is in any of the other five areas.",
+      "document": "armarm",
+      "page": 93,
+      "wouldSettleIt": "A data book for the ARM2aS macrocell itself, read for its answer to each of these encodings, or a measurement on real silicon. The 1990 VLSI ARM Family Data Manual, pinned in conformance/documents.json, is not that book: it documents the VL86C010 and VL86C020 only and says nothing of these encodings."
     },
     {
       "id": "ntransOnStoreRegister",

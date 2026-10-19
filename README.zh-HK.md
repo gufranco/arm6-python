@@ -459,15 +459,17 @@ python3 arm6/core.test.py
 
 這些文件均不可轉載，也不在本儲存庫中。個別句子連同其所在頁碼引用於 [`conformance/hardware.json`](conformance/hardware.json)。每一行列出頁數及檔案 SHA-256 的前十六個十六進位數字。
 
-| 文件                                                                                                                                                           | 日期       | 頁數 | SHA-256            |
-| :------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- | ---: | :----------------- |
-| [GEC Plessey Semiconductors, _ARM60 Datasheet_, Issue 0.81](https://3dodev.com/_media/documentation/hardware/arm60_datasheet_-_gec_plessey_semiconductors.pdf) | 1993       |   83 | `315dbff7b6259a73` |
-| [Advanced RISC Machines, _ARM610 Data Sheet_, ARM DDI 0004D](https://bitsavers.org/pdf/acorn/ARM_DDI_0004D_ARM610_Data_Sheet_Aug93.pdf)                        | 1993-08    |  134 | `76f13ffe2bc20774` |
-| [Advanced RISC Machines, _Application Note 11: Differences Between ARM6 and Earlier ARM Processors_](https://home.marutan.net/rpcemu/Apps11vC.html)            | 未註明日期 |    1 | `41239bc21c8e3375` |
+| 文件                                                                                                                                                                | 日期       | 頁數 | SHA-256            |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :--------- | ---: | :----------------- |
+| [GEC Plessey Semiconductors, _ARM60 Datasheet_, Issue 0.81](https://3dodev.com/_media/documentation/hardware/arm60_datasheet_-_gec_plessey_semiconductors.pdf)      | 1993       |   83 | `315dbff7b6259a73` |
+| [Advanced RISC Machines, _ARM610 Data Sheet_, ARM DDI 0004D](https://bitsavers.org/pdf/acorn/ARM_DDI_0004D_ARM610_Data_Sheet_Aug93.pdf)                             | 1993-08    |  134 | `76f13ffe2bc20774` |
+| [Advanced RISC Machines, _Application Note 11: Differences Between ARM6 and Earlier ARM Processors_](https://home.marutan.net/rpcemu/Apps11vC.html)                 | 未註明日期 |    1 | `41239bc21c8e3375` |
+| [ARM Limited, _ARM Architecture Reference Manual_, ARM DDI 0100E](https://www.cl.cam.ac.uk/teaching/0405/ECADArch/datasheets/arm.pdf)                               | 2000       |  811 | `fa405a69d371c533` |
+| [VLSI Technology, _Acorn RISC Machine (ARM) Family Data Manual_](https://bitsavers.mirrorservice.org/components/vti/1990_Acorn_RISC_Machine_Family_Data_Manual.pdf) | 1990       |  322 | `f3a524aeec44ab45` |
 
-[`conformance/documents.json`](conformance/documents.json) 記錄每份文件的完整摘要值、位元組數及可下載的地址。`python3 -m conformance.documents` 把三份文件全部下載到 git 忽略的 `docs/`，並拒絕任何摘要值不符的檔案。`--check` 驗證已存在的副本。由於上面連結的地址對普通請求返回 403，清單改從鏡像站取得 ARM610 數據手冊。兩者提供相同的位元組。
+[`conformance/documents.json`](conformance/documents.json) 記錄每份文件的完整摘要值、位元組數及可下載的地址。`python3 -m conformance.documents` 把五份文件全部下載到 git 忽略的 `docs/`，並拒絕任何摘要值不符的檔案。`--check` 驗證已存在的副本。由於上面連結的地址對普通請求返回 403，清單改從鏡像站取得 ARM610 數據手冊。兩者提供相同的位元組。
 
-以 ARM60 數據手冊為準。它是找到的唯一一份按指令、按週期給出此晶片總線行為的文件。ARM610 數據手冊是指令集和程式員模型的第二個佐證，僅此而已：其總線章節描述兩個時鐘、兩種週期類型和一個快取。Application Note 11 是找到的唯一一份列出四種 26 位模式編碼的文件，而兩份數據手冊都沒有列出。
+以 ARM60 數據手冊為準。它是找到的唯一一份按指令、按週期給出此晶片總線行為的文件。ARM610 數據手冊是指令集和程式員模型的第二個佐證，僅此而已：其總線章節描述兩個時鐘、兩種週期類型和一個快取。Application Note 11 是找到的唯一一份列出四種 26 位模式編碼的文件，而兩份數據手冊都沒有列出。ARM DDI 0100E 列出立即數循環移位後的移位器進位，ARM60 數據手冊沒有給出這一點。VLSI 數據手冊是為 ARM2aS 宏單元而讀的，它描述的是其他晶片，因此在這裡不決定任何事。
 
 [SingleStepTests/ARM7TDMI](https://github.com/SingleStepTests/ARM7TDMI) 提供錄製的案例。其提交及每項過濾條目均列於 [`conformance/suites.json`](conformance/suites.json)。
 

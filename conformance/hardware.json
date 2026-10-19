@@ -25,14 +25,23 @@
       "pages": 1,
       "readAs": "text, in full",
       "scope": "the four 26-bit mode encodings no datasheet prints, and the rule that says what an unobserved restriction does."
+    },
+    "armarm": {
+      "file": "arm_ddi0100e.pdf",
+      "title": "ARM Architecture Reference Manual, ARM DDI 0100E",
+      "sha256": "fa405a69d371c533f91aab331c8265c1d50ad0f5fe856f232f3a05f93f687114",
+      "pages": 811,
+      "readAs": "text layer, for the sections cited",
+      "scope": "the architecture, for instruction-level behaviour the ARM60 datasheet leaves unstated and the manual states for version 3. Never a timing, and never a bus."
     }
   },
-  "documentsNote": "Three documents, one of which decides. Only the ARM60 datasheet gives this part cycle by cycle; the other two are cited where they say something it does not.",
+  "documentsNote": "Four documents, one of which decides. Only the ARM60 datasheet gives this part cycle by cycle; the other three are cited where they say something it does not.",
   "authority": {
     "order": [
       "the ARM60 datasheet, for anything it prints: the instruction set, the programmer's model, the memory interface, and chapter 10's per-instruction per-cycle bus behaviour",
       "ARM DDI 0004D, the ARM610 datasheet, as a second witness for the instruction set and the programmer's model, never for a timing",
       "ARM Application Note 11, for the 26-bit mode encodings the datasheets do not tabulate, and for what an unobserved restriction does",
+      "ARM DDI 0100E, the Architecture Reference Manual, for instruction-level behaviour the datasheets leave unstated and it states for architecture version 3",
       "the filtered SingleStepTests ARM7TDMI corpus, state only, for instruction-level behaviour no document specifies",
       "nothing else"
     ],
@@ -520,6 +529,18 @@
           "parts": ["arm60"],
           "heldBy": [
             "arm6/dataops.test.py::TheImmediateOperandTest.test_the_rotate_field_turns_the_byte_by_twice_its_value"
+          ]
+        },
+        "immediateRotateCarry": {
+          "quote": "If the rotate immediate is zero, the carry-out from the shifter is the value of the C flag, otherwise, it is set to bit[31] of the value of <shifter_operand>.",
+          "document": "armarm",
+          "section": "A5.1.3 Data-processing operands - Immediate, Architecture version: All",
+          "page": 222,
+          "parts": ["arm60"],
+          "why": "ARM60 section 7.3.3 gives the rotate and stops, while section 7.3.1 says a logical operation takes its C flag from the shifter. This is the sentence that says what that flag is.",
+          "heldBy": [
+            "arm6/dataops.test.py::TheImmediateOperandTest.test_an_immediate_is_its_byte_turned_and_a_turned_one_carries_bit_31",
+            "arm6/dataops.test.py::TheImmediateOperandTest.test_an_unrotated_immediate_leaves_the_carry_alone"
           ]
         },
         "branchOffset": {

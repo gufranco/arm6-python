@@ -41,7 +41,10 @@ The family's clocked shape, unchanged, plus one addition and one refusal.
    instruction set and the programmer's model, never for a timing.
 3. **ARM Application Note 11**, for the four 26-bit mode encodings no datasheet
    tabulates, and for the rule saying what an unobserved restriction does.
-4. **The filtered ARM7TDMI corpus**, state only, for behaviour no document
+4. **ARM DDI 0100E**, the Architecture Reference Manual, for instruction-level
+   behaviour the datasheets leave unstated and it states for architecture
+   version 3, never for a timing.
+5. **The filtered ARM7TDMI corpus**, state only, for behaviour no document
    specifies.
 
 A rung above beats a rung below. Rungs two and three of the _family's_ ladder, a
@@ -54,7 +57,7 @@ that the timings differ rather than witnesses to what they are.
 
 ## What is settled and what is not
 
-**Not settled: 10 things**, each in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) with
+**Not settled: 9 things**, each in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) with
 the measurement that would close it. Four more are deliberately not modelled and
 are listed separately, so an omission reads as a decision rather than an oversight.
 

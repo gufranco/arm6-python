@@ -78,7 +78,14 @@ class RecordTest(unittest.TestCase):
         self.assertIn("What is deliberately not modelled", self.text)
 
     def test_there_are_open_questions_to_report(self) -> None:
-        self.assertEqual(len(opened()), 9)
+        # Arrange
+        expected = 8
+
+        # Act
+        held = opened()
+
+        # Assert
+        self.assertEqual(len(held), expected)
 
     def test_and_the_record_says_where_they_are_written_up(self) -> None:
         held = json.loads(RECORD.read_text())

@@ -49,18 +49,6 @@ internal.
 A later issue of the datasheet would settle it, or a measurement of `Nmreq`
 during a register-shifted data operation.
 
-### What the shifter carry is after an immediate operand is rotated
-
-Nothing disagrees here; the document stops. Section 7.3.3 gives the immediate
-value and the rotate applied to it and says nothing about the shifter's carry
-output, while section 7.3.1 says a logical operation takes its C flag from the
-barrel shifter. So every logical operation with an immediate operand and the S
-bit set writes a C flag the datasheet does not specify.
-
-This package follows the corpus: a rotate of zero passes the old flag through and
-any other rotate takes bit 31 of the result. That is rung four, and it is named
-as rung four in the record.
-
 ### What the encodings that do not trap actually do
 
 The note beneath Figure 28 says that some instruction codes are not defined but
@@ -68,8 +56,15 @@ do **not** cause the undefined instruction trap, and gives a multiply with bit 5
 or bit 6 set as its example. It does not say what they do.
 
 Application Note 11 says the behaviour of an unobserved restriction is the ARM2aS
-macrocell's. The document that would answer each case is therefore the VTI data
-book for that macrocell, which is not pinned here.
+macrocell's. The architecture manual, ARM DDI 0100E, declines as well: section
+A3.13 calls such an encoding UNPREDICTABLE in architecture version 3 unless it
+sits in the undefined instruction space. So no document of the architecture will
+answer it.
+
+The 1990 VLSI ARM Family Data Manual was read for the macrocell and is not the
+book: it documents the VL86C010 and the VL86C020 only, names no ARM2aS, and says
+nothing of these encodings. A data book for the ARM2aS macrocell itself would
+settle it, or a measurement on real silicon.
 
 So this package refuses these encodings and names the word it could not answer
 for. Choosing a behaviour would mean inventing one.
@@ -192,6 +187,12 @@ else. A search of the text layer would therefore have found nothing and the
 absence would have meant nothing. Every one of the passages in
 [`conformance/hardware.json`](conformance/hardware.json) was placed by rendering
 the page and reading it, and the checker that holds them there does the same.
+
+One place the datasheet stops is settled by another of ARM's documents. Section
+7.3.3 gives an immediate operand's rotate and not the carry it leaves, and ARM
+DDI 0100E section A5.1.3 prints it for every architecture version: a rotate of
+zero passes the C flag through, and any other rotate takes bit 31 of the result.
+That is what the corpus showed and what this package already did.
 
 Two contradictions inside the document were found and both are settled rather
 than open. The register count on page 1 disagrees with page 10; the block diagram
