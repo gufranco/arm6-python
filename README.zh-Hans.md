@@ -8,7 +8,7 @@
 [![Release](https://img.shields.io/github/v/release/gufranco/arm6-python)](https://github.com/gufranco/arm6-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-已比对 **424,220** 个录制用例，**0** 处不一致，**62** 句引文已定位到所引用的页面，**1** 个器件，**1,105** 个测试，**100%** 语句与分支覆盖率，无依赖
+已比对 **424,220** 个录制用例，**0** 处不一致，**62** 句引文已定位到所引用的页面，**1** 个器件，**1,130** 个测试，**100%** 语句与分支覆盖率，无依赖
 
 ```python
 from arm6 import Cpu, Memory
