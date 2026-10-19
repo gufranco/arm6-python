@@ -21,16 +21,16 @@ converts once a caller has described their own memory system.
 
 The family's clocked shape, unchanged, plus one addition and one refusal.
 
-| Call | What it does |
-|:--|:--|
-| `Cpu(model, memory)` | Builds the part. The model is required and there is no default |
-| `step()`, `run_for()`, `run_until()` | The family's three ways to drive it |
-| `reset()` | Section 6.3.6, including the cycles it costs, handed back for chaining |
-| `held()` | Always false, because nothing stops this part advancing |
-| `irq()`, `fiq()` | The two lines, both maskable, FIQ the higher priority |
-| `spent`, `tally` | The cost of the last instruction and the running total, as `Cycles` |
-| `spent.ticks(waits)` | A duration, once a caller says what their board costs. Refuses without |
-| `bus.cycles` | What the last instruction drove on the pins, one row per table row |
+| Call                                 | What it does                                                           |
+| :----------------------------------- | :--------------------------------------------------------------------- |
+| `Cpu(model, memory)`                 | Builds the part. The model is required and there is no default         |
+| `step()`, `run_for()`, `run_until()` | The family's three ways to drive it                                    |
+| `reset()`                            | Section 6.3.6, including the cycles it costs, handed back for chaining |
+| `held()`                             | Always false, because nothing stops this part advancing                |
+| `irq()`, `fiq()`                     | The two lines, both maskable, FIQ the higher priority                  |
+| `spent`, `tally`                     | The cost of the last instruction and the running total, as `Cycles`    |
+| `spent.ticks(waits)`                 | A duration, once a caller says what their board costs. Refuses without |
+| `bus.cycles`                         | What the last instruction drove on the pins, one row per table row     |
 
 ## The authority ladder
 
@@ -44,7 +44,7 @@ The family's clocked shape, unchanged, plus one addition and one refusal.
 4. **The filtered ARM7TDMI corpus**, state only, for behaviour no document
    specifies.
 
-A rung above beats a rung below. Rungs two and three of the *family's* ladder, a
+A rung above beats a rung below. Rungs two and three of the _family's_ ladder, a
 measurement on real hardware and a simulation of the die, are both empty here and
 the record says so.
 
@@ -170,6 +170,18 @@ The coverage exclusions carry none either:
   part, so the family tests that build a `Chip` and account for its reset are
   skipped here and their bodies never run.
 
+The formatter's ignores in [`.prettierignore`](.prettierignore) carry no
+comments either, so their reasons live here:
+
+- `pnpm-lock.yaml` and `package-lock.json`: the package manager writes them, in
+  its own layout, on every install.
+- `node_modules/`, `.venv/`, `venv/`, `build/`, `dist/` and `*.egg-info/`:
+  installed or built, never written by hand.
+- `.coverage`, `coverage.json`, `htmlcov/` and the tool caches: the output of a
+  run, never committed.
+- `docs/`, `specs/`, `.work/` and `.claude/`: local working material, never
+  committed.
+
 ## Layout
 
 ```text
@@ -227,7 +239,7 @@ conformance/
   and the model follows Table 5. The reasoning is in
   [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md); do not quietly switch it.
 - **The reserved bits of a PSR are written rather than masked.** Section 7.4.2
-  does say they shall be preserved, under a heading introducing rules a *program*
+  does say they shall be preserved, under a heading introducing rules a _program_
   should observe. Masking them in the model would be inventing a gate the document
   never describes, and the read-modify-write advice only makes sense if the
   silicon writes what it is given.

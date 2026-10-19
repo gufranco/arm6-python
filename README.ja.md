@@ -28,10 +28,10 @@ print(f"{cpu.registers.read(0):#010x} in {spent} cycle, {cpu.spent}")
 
 ## インストール
 
-| 要件 | バージョン |
-|:--|:--|
-| Python | 3.12以降 |
-| git | 任意 |
+| 要件                    | バージョン                                          |
+| :---------------------- | :-------------------------------------------------- |
+| Python                  | 3.12以降                                            |
+| git                     | 任意                                                |
 | `pdftoppm`と`tesseract` | 任意。`python3 -m conformance.quotes`でのみ必要です |
 
 ```bash
@@ -56,42 +56,42 @@ python3 arm6/doctor.py
 
 `arm6.Cpu(model, memory=None, seed=UNSET_SEED, fill=None, bigend=False, lateabt=True)`はパーツを1つ構築します。
 
-| 引数 | 意味 |
-|:--|:--|
-| `model` | 必須です。`arm60`またはその別名`arm6`で、大文字小文字は問いません。デフォルトはありません |
-| `memory` | `read_byte`、`write_byte`、`read_word`、`write_word`を持つ任意のオブジェクトです。省略すると、パーツは`seed`、`fill`、`bigend`から`Memory`を構築します |
-| `seed` | レジスタと、パーツが構築するメモリの電源投入時の内容を決めます |
-| `fill` | 代わりにすべてのレジスタと未書き込みのすべてのバイトの初期値となる値です。`fill=0`で静かな状態から始まります |
-| `bigend` | `bigend`ピンです。パーツが構築するメモリに渡され、`memory`が与えられた場合は無視されます |
-| `lateabt` | `lateabt`ピンで、パーツに保持されます。アボートピンは駆動されないため、何も変わりません |
+| 引数      | 意味                                                                                                                                                   |
+| :-------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `model`   | 必須です。`arm60`またはその別名`arm6`で、大文字小文字は問いません。デフォルトはありません                                                              |
+| `memory`  | `read_byte`、`write_byte`、`read_word`、`write_word`を持つ任意のオブジェクトです。省略すると、パーツは`seed`、`fill`、`bigend`から`Memory`を構築します |
+| `seed`    | レジスタと、パーツが構築するメモリの電源投入時の内容を決めます                                                                                         |
+| `fill`    | 代わりにすべてのレジスタと未書き込みのすべてのバイトの初期値となる値です。`fill=0`で静かな状態から始まります                                           |
+| `bigend`  | `bigend`ピンです。パーツが構築するメモリに渡され、`memory`が与えられた場合は無視されます                                                               |
+| `lateabt` | `lateabt`ピンで、パーツに保持されます。アボートピンは駆動されないため、何も変わりません                                                                |
 
 ### 呼び出し
 
-| 呼び出し | 効果 | 戻り値 |
-|:--|:--|:--|
-| `reset(low_cycles=2)` | Section 6.3.6に従い、スーパーバイザモードにし、両方の割り込み禁止を設定し、アドレス0からフェッチします。リセットラインを`low_cycles`回のダミーフェッチの間保持します。2回未満にはなりません。その後例外エントリに3サイクルを費やすため、デフォルトでは5サイクルかかります | パーツ |
-| `step()` | 1命令、または保留中のFIQやIRQへのエントリです | 費やしたサイクル数を`int`で返します |
-| `run_for(cycles)` | 少なくとも`cycles`を費やすまで命令単位で実行します。命令は分割されないため、超過することがあります | 費やしたサイクル数 |
-| `run_until(check, limit=None)` | `check(cpu)`が偽の間ステップ実行します。`limit`命令後に`RunLimit`を送出します | パーツ |
-| `held()` | パーツが進行を停止したかどうかです。このパーツを止めるものはありません | `False` |
-| `irq(level=True)`、`fiq(level=True)` | ラインを設定します。禁止ビットがクリアされていれば、次の`step()`がそれを受け付けます | 今受け付けられるかどうか |
+| 呼び出し                             | 効果                                                                                                                                                                                                                                                                      | 戻り値                              |
+| :----------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------- |
+| `reset(low_cycles=2)`                | Section 6.3.6に従い、スーパーバイザモードにし、両方の割り込み禁止を設定し、アドレス0からフェッチします。リセットラインを`low_cycles`回のダミーフェッチの間保持します。2回未満にはなりません。その後例外エントリに3サイクルを費やすため、デフォルトでは5サイクルかかります | パーツ                              |
+| `step()`                             | 1命令、または保留中のFIQやIRQへのエントリです                                                                                                                                                                                                                             | 費やしたサイクル数を`int`で返します |
+| `run_for(cycles)`                    | 少なくとも`cycles`を費やすまで命令単位で実行します。命令は分割されないため、超過することがあります                                                                                                                                                                        | 費やしたサイクル数                  |
+| `run_until(check, limit=None)`       | `check(cpu)`が偽の間ステップ実行します。`limit`命令後に`RunLimit`を送出します                                                                                                                                                                                             | パーツ                              |
+| `held()`                             | パーツが進行を停止したかどうかです。このパーツを止めるものはありません                                                                                                                                                                                                    | `False`                             |
+| `irq(level=True)`、`fiq(level=True)` | ラインを設定します。禁止ビットがクリアされていれば、次の`step()`がそれを受け付けます                                                                                                                                                                                      | 今受け付けられるかどうか            |
 
 ### 状態
 
-| 属性 | 意味 |
-|:--|:--|
-| `model` | `Model`レコードです。`name`、`aliases`、`summary`を持ちます |
-| `memory` | メモリオブジェクトです |
-| `registers` | `Registers`です。`read(index)`、`write(index, value)`、`pc`、`cpsr`、`saved()`、`save(value)`、`mode`を持ちます |
-| `mode` | CPSRから読み取った現在の`Mode`です |
-| `cycles` | パーツの構築以降のサイクル数で、リセットを含みます |
-| `steps` | 最後のリセット以降の命令数です |
-| `spent` | 最後の命令のコストを`Cycles`で表したものです |
-| `tally` | 累計を`Cycles`で表したもので、リセットをまたいで保持されます |
-| `bus.cycles` | 最後の命令のバスサイクルごとに1つの`Cycle`です。`kind`、`address`、`nopc`、`nbw`、`nrw`、`ntrans`、`lock`、`data`を持ちます。`kind`はコプロセッサを接続しないパーツが駆動する表3のサイクルタイプ（N、S、I）のいずれかで、`letter`、`name`、`nmreq`、`seq`、`touches_memory`を持ちます |
-| `irq_line`、`fiq_line` | 各割り込みラインのレベルです |
-| `on_cycle` | 各バスサイクルの終わり、そのサイクルの処理の後に、パーツを引数として呼ばれる呼び出し可能オブジェクト、または`None`です。`Clock`がこれを設定します |
-| `seed`、`bigend`、`lateabt` | コンストラクタの引数です |
+| 属性                        | 意味                                                                                                                                                                                                                                                                                  |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `model`                     | `Model`レコードです。`name`、`aliases`、`summary`を持ちます                                                                                                                                                                                                                           |
+| `memory`                    | メモリオブジェクトです                                                                                                                                                                                                                                                                |
+| `registers`                 | `Registers`です。`read(index)`、`write(index, value)`、`pc`、`cpsr`、`saved()`、`save(value)`、`mode`を持ちます                                                                                                                                                                       |
+| `mode`                      | CPSRから読み取った現在の`Mode`です                                                                                                                                                                                                                                                    |
+| `cycles`                    | パーツの構築以降のサイクル数で、リセットを含みます                                                                                                                                                                                                                                    |
+| `steps`                     | 最後のリセット以降の命令数です                                                                                                                                                                                                                                                        |
+| `spent`                     | 最後の命令のコストを`Cycles`で表したものです                                                                                                                                                                                                                                          |
+| `tally`                     | 累計を`Cycles`で表したもので、リセットをまたいで保持されます                                                                                                                                                                                                                          |
+| `bus.cycles`                | 最後の命令のバスサイクルごとに1つの`Cycle`です。`kind`、`address`、`nopc`、`nbw`、`nrw`、`ntrans`、`lock`、`data`を持ちます。`kind`はコプロセッサを接続しないパーツが駆動する表3のサイクルタイプ（N、S、I）のいずれかで、`letter`、`name`、`nmreq`、`seq`、`touches_memory`を持ちます |
+| `irq_line`、`fiq_line`      | 各割り込みラインのレベルです                                                                                                                                                                                                                                                          |
+| `on_cycle`                  | 各バスサイクルの終わり、そのサイクルの処理の後に、パーツを引数として呼ばれる呼び出し可能オブジェクト、または`None`です。`Clock`がこれを設定します                                                                                                                                     |
+| `seed`、`bigend`、`lateabt` | コンストラクタの引数です                                                                                                                                                                                                                                                              |
 
 ```python
 from arm6 import Cpu, Memory, RunLimit
@@ -159,30 +159,30 @@ True 0x5a5a5a5a
 
 `bigend`を設定すると、同じ4バイトが別のワードとして読まれます。0x2002に書き込んだワードは0x2000に置かれます。2つのシードは異なる電源投入時のバイトを与えます。リセット後のCPSRは`0xd3`で、これはIビットとFビットがセットされたスーパーバイザモードです。
 
-| 名前 | 内容 |
-|:--|:--|
-| `arm6.MODES` | 名前をキーとする10個の`Mode`レコードです。`usr32`、`fiq32`、`irq32`、`svc32`、`abt32`、`und32`と、26ビットの`usr26`、`fiq26`、`irq26`、`svc26`です。それぞれ`bits`、`wide`、`privileged`、`bank`、`spsr`を持ちます |
-| `arm6.VECTORS` | 名前ごとの7つの例外ベクタで、0x00の`reset`から0x1Cの`fiq`までです |
-| `arm6.UNSET_SEED` | シードが与えられないときに使われるシードです |
+| 名前              | 内容                                                                                                                                                                                                               |
+| :---------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `arm6.MODES`      | 名前をキーとする10個の`Mode`レコードです。`usr32`、`fiq32`、`irq32`、`svc32`、`abt32`、`und32`と、26ビットの`usr26`、`fiq26`、`irq26`、`svc26`です。それぞれ`bits`、`wide`、`privileged`、`bank`、`spsr`を持ちます |
+| `arm6.VECTORS`    | 名前ごとの7つの例外ベクタで、0x00の`reset`から0x1Cの`fiq`までです                                                                                                                                                  |
+| `arm6.UNSET_SEED` | シードが与えられないときに使われるシードです                                                                                                                                                                       |
 
 ### カタログとエラー
 
-| 名前 | 内容 |
-|:--|:--|
-| `arm6.MODELS` | `arm60`をキーとする1つの`Model`レコードです |
-| `arm6.Model` | カタログのエントリです。属性への書き込みはすべて拒否します |
-| `arm6.Arm6Error` | 以下のすべてのエラーの基底です |
-| `arm6.UnknownModelError` | どのモデルにも該当しない名前や空の名前に対して`Cpu`が送出します。メッセージには受け付けるすべての名前が列挙されます |
-| `arm6.RunLimit` | `check`が成り立たないまま`limit`命令が経過したときに`run_until`が送出します |
-| `arm6.EmptyRegisterList` | レジスタが1つも指定されていないブロック転送に対して`step`が送出します。Section 7.9はこれを禁止しており、パーツがどう動作するかは述べていません |
-| `arm6.UnspecifiedEncoding` | Figure 28のどの行にも一致しないワードに対して`step`が送出します |
-| `arm6.NoCoprocessor` | 公開されていますが、送出されることはありません。コプロセッサ命令は未定義命令トラップに入ります。これはコプロセッサが接続されていない場合についてSection 10.15が述べているとおりです |
-| `arm6.UnknownMode` | CPSRのモードフィールドが10個のモードのいずれでもないときに送出されます |
-| `arm6.WaitsRequired` | `Cycles.ticks(None)`が送出します |
-| `arm6.BadWaits` | 1未満の値に対して`Waits`が送出します |
-| `arm6.ClockClosed` | `close()`の後に`Clock.tick()`が送出します |
-| `arm6.Truncated` | オフセットに残っているバイトが4バイト未満のときにデコーダが送出します。`offset`がその位置を保持します。`disassemble`は送出せず、そこでリストを終えます |
-| `arm6.__version__` | インストールされているバージョンです |
+| 名前                       | 内容                                                                                                                                                                                |
+| :------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `arm6.MODELS`              | `arm60`をキーとする1つの`Model`レコードです                                                                                                                                         |
+| `arm6.Model`               | カタログのエントリです。属性への書き込みはすべて拒否します                                                                                                                          |
+| `arm6.Arm6Error`           | 以下のすべてのエラーの基底です                                                                                                                                                      |
+| `arm6.UnknownModelError`   | どのモデルにも該当しない名前や空の名前に対して`Cpu`が送出します。メッセージには受け付けるすべての名前が列挙されます                                                                 |
+| `arm6.RunLimit`            | `check`が成り立たないまま`limit`命令が経過したときに`run_until`が送出します                                                                                                         |
+| `arm6.EmptyRegisterList`   | レジスタが1つも指定されていないブロック転送に対して`step`が送出します。Section 7.9はこれを禁止しており、パーツがどう動作するかは述べていません                                      |
+| `arm6.UnspecifiedEncoding` | Figure 28のどの行にも一致しないワードに対して`step`が送出します                                                                                                                     |
+| `arm6.NoCoprocessor`       | 公開されていますが、送出されることはありません。コプロセッサ命令は未定義命令トラップに入ります。これはコプロセッサが接続されていない場合についてSection 10.15が述べているとおりです |
+| `arm6.UnknownMode`         | CPSRのモードフィールドが10個のモードのいずれでもないときに送出されます                                                                                                              |
+| `arm6.WaitsRequired`       | `Cycles.ticks(None)`が送出します                                                                                                                                                    |
+| `arm6.BadWaits`            | 1未満の値に対して`Waits`が送出します                                                                                                                                                |
+| `arm6.ClockClosed`         | `close()`の後に`Clock.tick()`が送出します                                                                                                                                           |
+| `arm6.Truncated`           | オフセットに残っているバイトが4バイト未満のときにデコーダが送出します。`offset`がその位置を保持します。`disassemble`は送出せず、そこでリストを終えます                              |
+| `arm6.__version__`         | インストールされているバージョンです                                                                                                                                                |
 
 ```python
 from arm6 import MODELS, Cpu, EmptyRegisterList, Memory, UnknownModelError, UnspecifiedEncoding
@@ -281,13 +281,13 @@ with Clock(cpu) as clock:
 
 最初のワードはアドレス8へのリンク付き分岐で、3サイクルかかります。2サイクル後にはカウンタはすでに分岐先を指しており、3番目のサイクル、つまり2回目のリフィルフェッチはまだ起きていません。`Cpu.run_for`は命令単位でサイクルを費やすため、そこで止まることはできません。
 
-| Clockの呼び出し | 効果 | 戻り値 |
-|:--|:--|:--|
-| `tick()` | パーツに1バスサイクルを実行させます。`close()`の後は`ClockClosed`を送出し、パーツが送出したものは再送出します | サイクル数 |
-| `run_for(cycles)` | `cycles`回ティックします | サイクル数 |
-| `close()` | スレッドを停止し、パーツの`on_cycle`を元に戻します。`with`ブロックがこれを呼び出します | `None` |
-| イテレーション | クロックが閉じられるまで、各ステップが1回の`tick()`です | サイクル数 |
-| `cycles`、`closed`、`cpu` | これまでのティック数、閉じられているかどうか、駆動しているパーツです | |
+| Clockの呼び出し           | 効果                                                                                                          | 戻り値     |
+| :------------------------ | :------------------------------------------------------------------------------------------------------------ | :--------- |
+| `tick()`                  | パーツに1バスサイクルを実行させます。`close()`の後は`ClockClosed`を送出し、パーツが送出したものは再送出します | サイクル数 |
+| `run_for(cycles)`         | `cycles`回ティックします                                                                                      | サイクル数 |
+| `close()`                 | スレッドを停止し、パーツの`on_cycle`を元に戻します。`with`ブロックがこれを呼び出します                        | `None`     |
+| イテレーション            | クロックが閉じられるまで、各ステップが1回の`tick()`です                                                       | サイクル数 |
+| `cycles`、`closed`、`cpu` | これまでのティック数、閉じられているかどうか、駆動しているパーツです                                          |            |
 
 ```python
 from arm6 import Clock, ClockClosed, Cpu
@@ -426,25 +426,25 @@ print(cpu.registers.pc, cpu.mode.name, cpu.cycles, cpu.steps)
 
 決着していないことは[OPEN-QUESTIONS.md](OPEN-QUESTIONS.md)に、文書どうしの食い違いは[`conformance/divergences.json`](conformance/divergences.json)にあります。最初の未解決の問いは、これらすべての上限です。ここにあるものは何一つ、実際のシリコンの測定に基づいていません。
 
-| コマンド | 引数 | 終了コード |
-|:--|:--|:--|
-| `python3 arm6/doctor.py` | なし | すべてのチェックに合格すれば0、そうでなければ1 |
-| `python3 -m conformance.quotes` | なし | 読み取れたすべての引用が照合されれば0、そうでなければ1。マシン上に文書がない場合は何もチェックせず、その旨を表示します |
-| `python3 -m conformance.singlestep [path]` | コーパスの`v1`ディレクトリで、デフォルトは`ARM7TDMI/v1`です。`--limit N`でファイルごとのケース数、`--count`で比較せずに数える、`--files`で取得すべきパスを表示します | 不一致がないかコーパスがなければ0、不一致があれば1 |
-| `python3 -m conformance.speed` | `--cycles N`はデフォルトで200,000、`--repeats N`はデフォルトで7です | 下限を上回れば0、下回れば1、不正なオプションでは2 |
-| `python3 -m conformance.documents` | `--check`で取得せずに検証、`--only SUBSTRING`で文書を選択します | すべての文書が検証されれば0、そうでなければ1 |
-| `python3 -m conformance.links` | なし。このREADME内のすべてのアドレスを確認します | アドレスが404または410を返さない限り0 |
-| `python3 -m conformance.package <wheel>` | ビルド済みのwheel | すべてのモジュールが含まれ、テストが1つも含まれていなければ0、そうでなければ1、引数がなければ2 |
+| コマンド                                   | 引数                                                                                                                                                                 | 終了コード                                                                                                             |
+| :----------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------- |
+| `python3 arm6/doctor.py`                   | なし                                                                                                                                                                 | すべてのチェックに合格すれば0、そうでなければ1                                                                         |
+| `python3 -m conformance.quotes`            | なし                                                                                                                                                                 | 読み取れたすべての引用が照合されれば0、そうでなければ1。マシン上に文書がない場合は何もチェックせず、その旨を表示します |
+| `python3 -m conformance.singlestep [path]` | コーパスの`v1`ディレクトリで、デフォルトは`ARM7TDMI/v1`です。`--limit N`でファイルごとのケース数、`--count`で比較せずに数える、`--files`で取得すべきパスを表示します | 不一致がないかコーパスがなければ0、不一致があれば1                                                                     |
+| `python3 -m conformance.speed`             | `--cycles N`はデフォルトで200,000、`--repeats N`はデフォルトで7です                                                                                                  | 下限を上回れば0、下回れば1、不正なオプションでは2                                                                      |
+| `python3 -m conformance.documents`         | `--check`で取得せずに検証、`--only SUBSTRING`で文書を選択します                                                                                                      | すべての文書が検証されれば0、そうでなければ1                                                                           |
+| `python3 -m conformance.links`             | なし。このREADME内のすべてのアドレスを確認します                                                                                                                     | アドレスが404または410を返さない限り0                                                                                  |
+| `python3 -m conformance.package <wheel>`   | ビルド済みのwheel                                                                                                                                                    | すべてのモジュールが含まれ、テストが1つも含まれていなければ0、そうでなければ1、引数がなければ2                         |
 
 ## 開発に参加する
 
-| 必要なもの | 場所 |
-|:--|:--|
-| すべてのゲートとその実行順序 | [CONTRIBUTING.md](CONTRIBUTING.md) |
-| コーディングエージェント向けの同じ内容 | [AGENTS.md](AGENTS.md) |
-| このリポジトリがファミリーの他のリポジトリと共有する標準 | [FAMILY.md](FAMILY.md) |
-| バグ報告 | [GitHub Issues](https://github.com/gufranco/arm6-python/issues) |
-| セキュリティ報告 | [SECURITY.md](SECURITY.md) |
+| 必要なもの                                               | 場所                                                            |
+| :------------------------------------------------------- | :-------------------------------------------------------------- |
+| すべてのゲートとその実行順序                             | [CONTRIBUTING.md](CONTRIBUTING.md)                              |
+| コーディングエージェント向けの同じ内容                   | [AGENTS.md](AGENTS.md)                                          |
+| このリポジトリがファミリーの他のリポジトリと共有する標準 | [FAMILY.md](FAMILY.md)                                          |
+| バグ報告                                                 | [GitHub Issues](https://github.com/gufranco/arm6-python/issues) |
+| セキュリティ報告                                         | [SECURITY.md](SECURITY.md)                                      |
 
 ```bash
 uvx ruff@0.16.3 format --check .
@@ -459,11 +459,11 @@ python3 arm6/core.test.py
 
 これらの文書はいずれも再配布可能ではなく、このリポジトリには含まれていません。個々の文は、印刷されているページとともに[`conformance/hardware.json`](conformance/hardware.json)に引用されています。各行にはページ数と、ファイルのSHA-256の先頭16桁の16進数を示しています。
 
-| 文書 | 日付 | ページ数 | SHA-256 |
-|:--|:--|--:|:--|
-| [GEC Plessey Semiconductors, *ARM60 Datasheet*, Issue 0.81](https://3dodev.com/_media/documentation/hardware/arm60_datasheet_-_gec_plessey_semiconductors.pdf) | 1993 | 83 | `315dbff7b6259a73` |
-| [Advanced RISC Machines, *ARM610 Data Sheet*, ARM DDI 0004D](https://bitsavers.org/pdf/acorn/ARM_DDI_0004D_ARM610_Data_Sheet_Aug93.pdf) | 1993-08 | 134 | `76f13ffe2bc20774` |
-| [Advanced RISC Machines, *Application Note 11: Differences Between ARM6 and Earlier ARM Processors*](https://home.marutan.net/rpcemu/Apps11vC.html) | 日付なし | 1 | `41239bc21c8e3375` |
+| 文書                                                                                                                                                           | 日付     | ページ数 | SHA-256            |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------- | -------: | :----------------- |
+| [GEC Plessey Semiconductors, _ARM60 Datasheet_, Issue 0.81](https://3dodev.com/_media/documentation/hardware/arm60_datasheet_-_gec_plessey_semiconductors.pdf) | 1993     |       83 | `315dbff7b6259a73` |
+| [Advanced RISC Machines, _ARM610 Data Sheet_, ARM DDI 0004D](https://bitsavers.org/pdf/acorn/ARM_DDI_0004D_ARM610_Data_Sheet_Aug93.pdf)                        | 1993-08  |      134 | `76f13ffe2bc20774` |
+| [Advanced RISC Machines, _Application Note 11: Differences Between ARM6 and Earlier ARM Processors_](https://home.marutan.net/rpcemu/Apps11vC.html)            | 日付なし |        1 | `41239bc21c8e3375` |
 
 [`conformance/documents.json`](conformance/documents.json)には、各文書の完全なダイジェスト、バイト数、取得可能なアドレスが記載されています。`python3 -m conformance.documents`は3つすべてをgitが無視する`docs/`にダウンロードし、ダイジェストが異なるファイルは拒否します。`--check`はすでにあるコピーを検証します。上にリンクしたアドレスは単純な取得に403を返すため、マニフェストはARM610データシートをミラーから取得します。どちらも同じバイト列を提供します。
 

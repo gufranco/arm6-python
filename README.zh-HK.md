@@ -28,10 +28,10 @@ print(f"{cpu.registers.read(0):#010x} in {spent} cycle, {cpu.spent}")
 
 ## 安裝
 
-| 要求 | 版本 |
-|:--|:--|
-| Python | 3.12 或以上 |
-| git | 任何版本 |
+| 要求                      | 版本                                                |
+| :------------------------ | :-------------------------------------------------- |
+| Python                    | 3.12 或以上                                         |
+| git                       | 任何版本                                            |
 | `pdftoppm` 和 `tesseract` | 任何版本，且僅 `python3 -m conformance.quotes` 需要 |
 
 ```bash
@@ -56,42 +56,42 @@ python3 arm6/doctor.py
 
 `arm6.Cpu(model, memory=None, seed=UNSET_SEED, fill=None, bigend=False, lateabt=True)` 建立一個型號。
 
-| 參數 | 含義 |
-|:--|:--|
-| `model` | 必填。`arm60` 或其別名 `arm6`，不分大小寫。沒有預設值 |
-| `memory` | 任何具有 `read_byte`、`write_byte`、`read_word` 和 `write_word` 的物件。省略時，型號會根據 `seed`、`fill` 和 `bigend` 自行建立一個 `Memory` |
-| `seed` | 設定暫存器及型號自行建立的記憶體的上電內容 |
-| `fill` | 改為讓每個暫存器和每個未寫入的位元組以此值開始。`fill=0` 提供一個乾淨的開始 |
-| `bigend` | `bigend` 針腳。傳給型號自行建立的記憶體，提供 `memory` 時則忽略 |
-| `lateabt` | `lateabt` 針腳，保存在型號上。中止針腳不會被驅動，因此它不改變任何行為 |
+| 參數      | 含義                                                                                                                                        |
+| :-------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
+| `model`   | 必填。`arm60` 或其別名 `arm6`，不分大小寫。沒有預設值                                                                                       |
+| `memory`  | 任何具有 `read_byte`、`write_byte`、`read_word` 和 `write_word` 的物件。省略時，型號會根據 `seed`、`fill` 和 `bigend` 自行建立一個 `Memory` |
+| `seed`    | 設定暫存器及型號自行建立的記憶體的上電內容                                                                                                  |
+| `fill`    | 改為讓每個暫存器和每個未寫入的位元組以此值開始。`fill=0` 提供一個乾淨的開始                                                                 |
+| `bigend`  | `bigend` 針腳。傳給型號自行建立的記憶體，提供 `memory` 時則忽略                                                                             |
+| `lateabt` | `lateabt` 針腳，保存在型號上。中止針腳不會被驅動，因此它不改變任何行為                                                                      |
 
 ### 呼叫
 
-| 呼叫 | 效果 | 返回值 |
-|:--|:--|:--|
-| `reset(low_cycles=2)` | Section 6.3.6：監督模式，兩個中斷禁止位均設定，從地址零取指。將重設線保持 `low_cycles` 次虛擬取指，最少 2 次，然後在異常進入上花費 3 個週期，因此預設花費 5 個週期 | 該型號 |
-| `step()` | 一條指令，或進入一個待處理的 FIQ 或 IRQ | 所花費的週期數，類型為 `int` |
-| `run_for(cycles)` | 執行完整指令，直至至少花費 `cycles` 個週期。指令不會被分割，因此可能超出 | 所花費的週期數 |
-| `run_until(check, limit=None)` | 在 `check(cpu)` 為假時持續單步執行。經過 `limit` 條指令後拋出 `RunLimit` | 該型號 |
-| `held()` | 型號是否已停止推進。沒有任何因素會令此型號停止 | `False` |
-| `irq(level=True)`、`fiq(level=True)` | 設定該線。當其禁止位清除時，下一次 `step()` 會響應它 | 此刻是否會被響應 |
+| 呼叫                                 | 效果                                                                                                                                                               | 返回值                       |
+| :----------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------- |
+| `reset(low_cycles=2)`                | Section 6.3.6：監督模式，兩個中斷禁止位均設定，從地址零取指。將重設線保持 `low_cycles` 次虛擬取指，最少 2 次，然後在異常進入上花費 3 個週期，因此預設花費 5 個週期 | 該型號                       |
+| `step()`                             | 一條指令，或進入一個待處理的 FIQ 或 IRQ                                                                                                                            | 所花費的週期數，類型為 `int` |
+| `run_for(cycles)`                    | 執行完整指令，直至至少花費 `cycles` 個週期。指令不會被分割，因此可能超出                                                                                           | 所花費的週期數               |
+| `run_until(check, limit=None)`       | 在 `check(cpu)` 為假時持續單步執行。經過 `limit` 條指令後拋出 `RunLimit`                                                                                           | 該型號                       |
+| `held()`                             | 型號是否已停止推進。沒有任何因素會令此型號停止                                                                                                                     | `False`                      |
+| `irq(level=True)`、`fiq(level=True)` | 設定該線。當其禁止位清除時，下一次 `step()` 會響應它                                                                                                               | 此刻是否會被響應             |
 
 ### 狀態
 
-| 屬性 | 含義 |
-|:--|:--|
-| `model` | `Model` 記錄：`name`、`aliases`、`summary` |
-| `memory` | 記憶體物件 |
-| `registers` | `Registers`：`read(index)`、`write(index, value)`、`pc`、`cpsr`、`saved()`、`save(value)`、`mode` |
-| `mode` | 當前的 `Mode`，從 CPSR 讀取 |
-| `cycles` | 自型號建立以來的週期數，包括重設 |
-| `steps` | 自上次重設以來的指令數 |
-| `spent` | 上一條指令的花費，類型為 `Cycles` |
-| `tally` | 累計總數，類型為 `Cycles`，跨重設保留 |
-| `bus.cycles` | 上一條指令每個總線週期對應一個 `Cycle`：`kind`、`address`、`nopc`、`nbw`、`nrw`、`ntrans`、`lock`、`data`。`kind` 是未接協處理器的型號所驅動的表 3 週期類型之一：N、S 或 I，帶有 `letter`、`name`、`nmreq`、`seq` 及 `touches_memory` |
-| `irq_line`、`fiq_line` | 每條中斷線的電平 |
-| `on_cycle` | 在每個總線週期結束、該週期的工作完成之後以型號為參數執行的可調用物件，或 `None`。由 `Clock` 設定 |
-| `seed`、`bigend`、`lateabt` | 建構函數的參數 |
+| 屬性                        | 含義                                                                                                                                                                                                                                  |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `model`                     | `Model` 記錄：`name`、`aliases`、`summary`                                                                                                                                                                                            |
+| `memory`                    | 記憶體物件                                                                                                                                                                                                                            |
+| `registers`                 | `Registers`：`read(index)`、`write(index, value)`、`pc`、`cpsr`、`saved()`、`save(value)`、`mode`                                                                                                                                     |
+| `mode`                      | 當前的 `Mode`，從 CPSR 讀取                                                                                                                                                                                                           |
+| `cycles`                    | 自型號建立以來的週期數，包括重設                                                                                                                                                                                                      |
+| `steps`                     | 自上次重設以來的指令數                                                                                                                                                                                                                |
+| `spent`                     | 上一條指令的花費，類型為 `Cycles`                                                                                                                                                                                                     |
+| `tally`                     | 累計總數，類型為 `Cycles`，跨重設保留                                                                                                                                                                                                 |
+| `bus.cycles`                | 上一條指令每個總線週期對應一個 `Cycle`：`kind`、`address`、`nopc`、`nbw`、`nrw`、`ntrans`、`lock`、`data`。`kind` 是未接協處理器的型號所驅動的表 3 週期類型之一：N、S 或 I，帶有 `letter`、`name`、`nmreq`、`seq` 及 `touches_memory` |
+| `irq_line`、`fiq_line`      | 每條中斷線的電平                                                                                                                                                                                                                      |
+| `on_cycle`                  | 在每個總線週期結束、該週期的工作完成之後以型號為參數執行的可調用物件，或 `None`。由 `Clock` 設定                                                                                                                                      |
+| `seed`、`bigend`、`lateabt` | 建構函數的參數                                                                                                                                                                                                                        |
 
 ```python
 from arm6 import Cpu, Memory, RunLimit
@@ -159,30 +159,30 @@ True 0x5a5a5a5a
 
 設定 `bigend` 後，同樣四個位元組讀出兩個不同的字。在 0x2002 寫入的字落在 0x2000。兩個種子給出兩個不同的上電位元組。重設後 CPSR 為 `0xd3`：監督模式，I 位和 F 位均設定。
 
-| 名稱 | 內容 |
-|:--|:--|
-| `arm6.MODES` | 十個 `Mode` 記錄，以名稱為鍵：`usr32`、`fiq32`、`irq32`、`svc32`、`abt32`、`und32`，以及 26 位的 `usr26`、`fiq26`、`irq26`、`svc26`。每個記錄有 `bits`、`wide`、`privileged`、`bank` 和 `spsr` |
-| `arm6.VECTORS` | 按名稱列出的七個異常向量，由位於 0x00 的 `reset` 至位於 0x1C 的 `fiq` |
-| `arm6.UNSET_SEED` | 未提供種子時使用的種子 |
+| 名稱              | 內容                                                                                                                                                                                           |
+| :---------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `arm6.MODES`      | 十個 `Mode` 記錄，以名稱為鍵：`usr32`、`fiq32`、`irq32`、`svc32`、`abt32`、`und32`，以及 26 位的 `usr26`、`fiq26`、`irq26`、`svc26`。每個記錄有 `bits`、`wide`、`privileged`、`bank` 和 `spsr` |
+| `arm6.VECTORS`    | 按名稱列出的七個異常向量，由位於 0x00 的 `reset` 至位於 0x1C 的 `fiq`                                                                                                                          |
+| `arm6.UNSET_SEED` | 未提供種子時使用的種子                                                                                                                                                                         |
 
 ### 目錄和錯誤
 
-| 名稱 | 內容 |
-|:--|:--|
-| `arm6.MODELS` | 唯一的 `Model` 記錄，以 `arm60` 為鍵 |
-| `arm6.Model` | 一個目錄項目。它拒絕所有屬性寫入 |
-| `arm6.Arm6Error` | 以下所有錯誤的基類 |
-| `arm6.UnknownModelError` | 當名稱不屬於任何型號或為空時，由 `Cpu` 拋出。訊息會列出所有接受的名稱 |
-| `arm6.RunLimit` | 經過 `limit` 條指令而 `check` 仍未成立時，由 `run_until` 拋出 |
-| `arm6.EmptyRegisterList` | 遇到未列出任何暫存器的區塊傳輸時，由 `step` 拋出。Section 7.9 禁止這種情況，但沒有說明型號會如何處理 |
-| `arm6.UnspecifiedEncoding` | 遇到不匹配 Figure 28 任何一行的字時，由 `step` 拋出 |
-| `arm6.NoCoprocessor` | 已公開但從不拋出。協處理器指令會進入未定義指令陷阱，與 section 10.15 所述未連接協處理器時的行為一致 |
-| `arm6.UnknownMode` | 當 CPSR 模式欄位不屬於十種模式中的任何一種時拋出 |
-| `arm6.WaitsRequired` | 由 `Cycles.ticks(None)` 拋出 |
-| `arm6.BadWaits` | 數值小於 1 時由 `Waits` 拋出 |
-| `arm6.ClockClosed` | 在 `close()` 之後由 `Clock.tick()` 拋出 |
-| `arm6.Truncated` | 當偏移處剩餘不足四個位元組時，由解碼器拋出。`offset` 保存其位置。`disassemble` 會在該處結束列表，而不是拋出 |
-| `arm6.__version__` | 已安裝的版本 |
+| 名稱                       | 內容                                                                                                        |
+| :------------------------- | :---------------------------------------------------------------------------------------------------------- |
+| `arm6.MODELS`              | 唯一的 `Model` 記錄，以 `arm60` 為鍵                                                                        |
+| `arm6.Model`               | 一個目錄項目。它拒絕所有屬性寫入                                                                            |
+| `arm6.Arm6Error`           | 以下所有錯誤的基類                                                                                          |
+| `arm6.UnknownModelError`   | 當名稱不屬於任何型號或為空時，由 `Cpu` 拋出。訊息會列出所有接受的名稱                                       |
+| `arm6.RunLimit`            | 經過 `limit` 條指令而 `check` 仍未成立時，由 `run_until` 拋出                                               |
+| `arm6.EmptyRegisterList`   | 遇到未列出任何暫存器的區塊傳輸時，由 `step` 拋出。Section 7.9 禁止這種情況，但沒有說明型號會如何處理        |
+| `arm6.UnspecifiedEncoding` | 遇到不匹配 Figure 28 任何一行的字時，由 `step` 拋出                                                         |
+| `arm6.NoCoprocessor`       | 已公開但從不拋出。協處理器指令會進入未定義指令陷阱，與 section 10.15 所述未連接協處理器時的行為一致         |
+| `arm6.UnknownMode`         | 當 CPSR 模式欄位不屬於十種模式中的任何一種時拋出                                                            |
+| `arm6.WaitsRequired`       | 由 `Cycles.ticks(None)` 拋出                                                                                |
+| `arm6.BadWaits`            | 數值小於 1 時由 `Waits` 拋出                                                                                |
+| `arm6.ClockClosed`         | 在 `close()` 之後由 `Clock.tick()` 拋出                                                                     |
+| `arm6.Truncated`           | 當偏移處剩餘不足四個位元組時，由解碼器拋出。`offset` 保存其位置。`disassemble` 會在該處結束列表，而不是拋出 |
+| `arm6.__version__`         | 已安裝的版本                                                                                                |
 
 ```python
 from arm6 import MODELS, Cpu, EmptyRegisterList, Memory, UnknownModelError, UnspecifiedEncoding
@@ -281,13 +281,13 @@ with Clock(cpu) as clock:
 
 第一個字是跳轉到地址 8 的帶連結跳轉，花費 3 個週期。經過 2 個週期後，計數器已指向目標，而第三個週期，即第二次重新填充取指，尚未發生。`Cpu.run_for` 無法停在這裏，因為它以完整指令為單位花費週期。
 
-| Clock 呼叫 | 效果 | 返回值 |
-|:--|:--|:--|
-| `tick()` | 讓型號執行一個總線週期。在 `close()` 之後拋出 `ClockClosed`，並重新拋出型號拋出的任何異常 | 週期計數 |
-| `run_for(cycles)` | `cycles` 次節拍 | 週期計數 |
-| `close()` | 停止線程並恢復型號的 `on_cycle`。`with` 區塊會呼叫它 | `None` |
-| 迭代 | 每一步是一次 `tick()`，直至時鐘關閉 | 週期計數 |
-| `cycles`、`closed`、`cpu` | 目前為止的節拍數、是否已關閉、它所驅動的型號 | |
+| Clock 呼叫                | 效果                                                                                      | 返回值   |
+| :------------------------ | :---------------------------------------------------------------------------------------- | :------- |
+| `tick()`                  | 讓型號執行一個總線週期。在 `close()` 之後拋出 `ClockClosed`，並重新拋出型號拋出的任何異常 | 週期計數 |
+| `run_for(cycles)`         | `cycles` 次節拍                                                                           | 週期計數 |
+| `close()`                 | 停止線程並恢復型號的 `on_cycle`。`with` 區塊會呼叫它                                      | `None`   |
+| 迭代                      | 每一步是一次 `tick()`，直至時鐘關閉                                                       | 週期計數 |
+| `cycles`、`closed`、`cpu` | 目前為止的節拍數、是否已關閉、它所驅動的型號                                              |          |
 
 ```python
 from arm6 import Clock, ClockClosed, Cpu
@@ -426,25 +426,25 @@ print(cpu.registers.pc, cpu.mode.name, cpu.cycles, cpu.steps)
 
 尚未確定的問題列於 [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md)，各文件之間的分歧列於 [`conformance/divergences.json`](conformance/divergences.json)。第一個未解問題是凌駕於這一切之上的上限：這裏沒有任何內容建基於對真實晶片的測量。
 
-| 命令 | 參數 | 退出碼 |
-|:--|:--|:--|
-| `python3 arm6/doctor.py` | 無 | 所有檢查通過時為 0，否則為 1 |
-| `python3 -m conformance.quotes` | 無 | 所有可讀取的引文均已定位時為 0，否則為 1。機器上沒有文件時，它不檢查任何內容並如實說明 |
-| `python3 -m conformance.singlestep [path]` | 案例集的 `v1` 目錄，預設為 `ARM7TDMI/v1`。`--limit N` 限制每個檔案的案例數，`--count` 只計數不比對，`--files` 輸出需要取得的路徑 | 沒有不一致或沒有案例集時為 0，有任何不一致時為 1 |
-| `python3 -m conformance.speed` | `--cycles N`，預設 200,000，以及 `--repeats N`，預設 7 | 高於下限時為 0，低於下限時為 1，選項錯誤時為 2 |
-| `python3 -m conformance.documents` | `--check` 只驗證不下載，`--only SUBSTRING` 選擇文件 | 所有文件驗證通過時為 0，否則為 1 |
-| `python3 -m conformance.links` | 無。它會探測本 README 中的每個地址 | 0，除非有地址返回 404 或 410 |
-| `python3 -m conformance.package <wheel>` | 一個已建置的 wheel | 所有模組均已包含且不含任何測試時為 0，否則為 1，沒有參數時為 2 |
+| 命令                                       | 參數                                                                                                                             | 退出碼                                                                                 |
+| :----------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------- |
+| `python3 arm6/doctor.py`                   | 無                                                                                                                               | 所有檢查通過時為 0，否則為 1                                                           |
+| `python3 -m conformance.quotes`            | 無                                                                                                                               | 所有可讀取的引文均已定位時為 0，否則為 1。機器上沒有文件時，它不檢查任何內容並如實說明 |
+| `python3 -m conformance.singlestep [path]` | 案例集的 `v1` 目錄，預設為 `ARM7TDMI/v1`。`--limit N` 限制每個檔案的案例數，`--count` 只計數不比對，`--files` 輸出需要取得的路徑 | 沒有不一致或沒有案例集時為 0，有任何不一致時為 1                                       |
+| `python3 -m conformance.speed`             | `--cycles N`，預設 200,000，以及 `--repeats N`，預設 7                                                                           | 高於下限時為 0，低於下限時為 1，選項錯誤時為 2                                         |
+| `python3 -m conformance.documents`         | `--check` 只驗證不下載，`--only SUBSTRING` 選擇文件                                                                              | 所有文件驗證通過時為 0，否則為 1                                                       |
+| `python3 -m conformance.links`             | 無。它會探測本 README 中的每個地址                                                                                               | 0，除非有地址返回 404 或 410                                                           |
+| `python3 -m conformance.package <wheel>`   | 一個已建置的 wheel                                                                                                               | 所有模組均已包含且不含任何測試時為 0，否則為 1，沒有參數時為 2                         |
 
 ## 參與開發
 
-| 需要 | 位置 |
-|:--|:--|
-| 所有關卡檢查及其執行次序 | [CONTRIBUTING.md](CONTRIBUTING.md) |
-| 供編程代理使用的相同內容 | [AGENTS.md](AGENTS.md) |
-| 本儲存庫與同系列其他儲存庫共用的標準 | [FAMILY.md](FAMILY.md) |
-| 錯誤報告 | [GitHub Issues](https://github.com/gufranco/arm6-python/issues) |
-| 安全報告 | [SECURITY.md](SECURITY.md) |
+| 需要                                 | 位置                                                            |
+| :----------------------------------- | :-------------------------------------------------------------- |
+| 所有關卡檢查及其執行次序             | [CONTRIBUTING.md](CONTRIBUTING.md)                              |
+| 供編程代理使用的相同內容             | [AGENTS.md](AGENTS.md)                                          |
+| 本儲存庫與同系列其他儲存庫共用的標準 | [FAMILY.md](FAMILY.md)                                          |
+| 錯誤報告                             | [GitHub Issues](https://github.com/gufranco/arm6-python/issues) |
+| 安全報告                             | [SECURITY.md](SECURITY.md)                                      |
 
 ```bash
 uvx ruff@0.16.3 format --check .
@@ -459,11 +459,11 @@ python3 arm6/core.test.py
 
 這些文件均不可轉載，也不在本儲存庫中。個別句子連同其所在頁碼引用於 [`conformance/hardware.json`](conformance/hardware.json)。每一行列出頁數及檔案 SHA-256 的前十六個十六進位數字。
 
-| 文件 | 日期 | 頁數 | SHA-256 |
-|:--|:--|--:|:--|
-| [GEC Plessey Semiconductors, *ARM60 Datasheet*, Issue 0.81](https://3dodev.com/_media/documentation/hardware/arm60_datasheet_-_gec_plessey_semiconductors.pdf) | 1993 | 83 | `315dbff7b6259a73` |
-| [Advanced RISC Machines, *ARM610 Data Sheet*, ARM DDI 0004D](https://bitsavers.org/pdf/acorn/ARM_DDI_0004D_ARM610_Data_Sheet_Aug93.pdf) | 1993-08 | 134 | `76f13ffe2bc20774` |
-| [Advanced RISC Machines, *Application Note 11: Differences Between ARM6 and Earlier ARM Processors*](https://home.marutan.net/rpcemu/Apps11vC.html) | 未註明日期 | 1 | `41239bc21c8e3375` |
+| 文件                                                                                                                                                           | 日期       | 頁數 | SHA-256            |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- | ---: | :----------------- |
+| [GEC Plessey Semiconductors, _ARM60 Datasheet_, Issue 0.81](https://3dodev.com/_media/documentation/hardware/arm60_datasheet_-_gec_plessey_semiconductors.pdf) | 1993       |   83 | `315dbff7b6259a73` |
+| [Advanced RISC Machines, _ARM610 Data Sheet_, ARM DDI 0004D](https://bitsavers.org/pdf/acorn/ARM_DDI_0004D_ARM610_Data_Sheet_Aug93.pdf)                        | 1993-08    |  134 | `76f13ffe2bc20774` |
+| [Advanced RISC Machines, _Application Note 11: Differences Between ARM6 and Earlier ARM Processors_](https://home.marutan.net/rpcemu/Apps11vC.html)            | 未註明日期 |    1 | `41239bc21c8e3375` |
 
 [`conformance/documents.json`](conformance/documents.json) 記錄每份文件的完整摘要值、位元組數及可下載的地址。`python3 -m conformance.documents` 把三份文件全部下載到 git 忽略的 `docs/`，並拒絕任何摘要值不符的檔案。`--check` 驗證已存在的副本。由於上面連結的地址對普通請求返回 403，清單改從鏡像站取得 ARM610 數據手冊。兩者提供相同的位元組。
 

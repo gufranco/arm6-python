@@ -28,10 +28,10 @@ print(f"{cpu.registers.read(0):#010x} in {spent} cycle, {cpu.spent}")
 
 ## 安装
 
-| 要求 | 版本 |
-|:--|:--|
-| Python | 3.12 或更高 |
-| git | 任意 |
+| 要求                      | 版本                                           |
+| :------------------------ | :--------------------------------------------- |
+| Python                    | 3.12 或更高                                    |
+| git                       | 任意                                           |
 | `pdftoppm` 和 `tesseract` | 任意，且仅用于 `python3 -m conformance.quotes` |
 
 ```bash
@@ -56,42 +56,42 @@ python3 arm6/doctor.py
 
 `arm6.Cpu(model, memory=None, seed=UNSET_SEED, fill=None, bigend=False, lateabt=True)` 构建一个器件。
 
-| 参数 | 含义 |
-|:--|:--|
-| `model` | 必填。`arm60` 或其别名 `arm6`，大小写不限。没有默认值 |
-| `memory` | 任何具有 `read_byte`、`write_byte`、`read_word` 和 `write_word` 的对象。省略时，器件根据 `seed`、`fill` 和 `bigend` 构建一个 `Memory` |
-| `seed` | 设定寄存器以及器件所构建内存的上电内容 |
-| `fill` | 改为让每个寄存器和每个未写入的字节都从这个值开始。`fill=0` 给出一个无噪声的起始状态 |
-| `bigend` | `bigend` 引脚。传给器件所构建的内存，提供 `memory` 时忽略 |
-| `lateabt` | `lateabt` 引脚，保存在器件上。中止引脚不被驱动，因此它不改变任何行为 |
+| 参数      | 含义                                                                                                                                  |
+| :-------- | :------------------------------------------------------------------------------------------------------------------------------------ |
+| `model`   | 必填。`arm60` 或其别名 `arm6`，大小写不限。没有默认值                                                                                 |
+| `memory`  | 任何具有 `read_byte`、`write_byte`、`read_word` 和 `write_word` 的对象。省略时，器件根据 `seed`、`fill` 和 `bigend` 构建一个 `Memory` |
+| `seed`    | 设定寄存器以及器件所构建内存的上电内容                                                                                                |
+| `fill`    | 改为让每个寄存器和每个未写入的字节都从这个值开始。`fill=0` 给出一个无噪声的起始状态                                                   |
+| `bigend`  | `bigend` 引脚。传给器件所构建的内存，提供 `memory` 时忽略                                                                             |
+| `lateabt` | `lateabt` 引脚，保存在器件上。中止引脚不被驱动，因此它不改变任何行为                                                                  |
 
 ### 调用
 
-| 调用 | 作用 | 返回值 |
-|:--|:--|:--|
-| `reset(low_cycles=2)` | Section 6.3.6：管理模式，两个中断禁止位都置位，从地址零取指。复位线保持 `low_cycles` 次空取指，不少于 2 次，随后异常进入耗费 3 个周期，因此默认开销为 5 个周期 | 该器件 |
-| `step()` | 执行一条指令，或进入一个待处理的 FIQ 或 IRQ | 它耗费的周期数，类型为 `int` |
-| `run_for(cycles)` | 执行完整的指令，直到至少耗费 `cycles` 个周期。指令从不拆分，因此可能超出 | 耗费的周期数 |
-| `run_until(check, limit=None)` | 在 `check(cpu)` 为假时持续单步执行。执行 `limit` 条指令后抛出 `RunLimit` | 该器件 |
-| `held()` | 器件是否已停止推进。没有任何东西会让这个器件停下 | `False` |
-| `irq(level=True)`, `fiq(level=True)` | 设置该线的电平。其禁止位清零时，下一次 `step()` 会响应它 | 现在是否会被响应 |
+| 调用                                 | 作用                                                                                                                                                           | 返回值                       |
+| :----------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------- |
+| `reset(low_cycles=2)`                | Section 6.3.6：管理模式，两个中断禁止位都置位，从地址零取指。复位线保持 `low_cycles` 次空取指，不少于 2 次，随后异常进入耗费 3 个周期，因此默认开销为 5 个周期 | 该器件                       |
+| `step()`                             | 执行一条指令，或进入一个待处理的 FIQ 或 IRQ                                                                                                                    | 它耗费的周期数，类型为 `int` |
+| `run_for(cycles)`                    | 执行完整的指令，直到至少耗费 `cycles` 个周期。指令从不拆分，因此可能超出                                                                                       | 耗费的周期数                 |
+| `run_until(check, limit=None)`       | 在 `check(cpu)` 为假时持续单步执行。执行 `limit` 条指令后抛出 `RunLimit`                                                                                       | 该器件                       |
+| `held()`                             | 器件是否已停止推进。没有任何东西会让这个器件停下                                                                                                               | `False`                      |
+| `irq(level=True)`, `fiq(level=True)` | 设置该线的电平。其禁止位清零时，下一次 `step()` 会响应它                                                                                                       | 现在是否会被响应             |
 
 ### 状态
 
-| 属性 | 含义 |
-|:--|:--|
-| `model` | `Model` 记录：`name`、`aliases`、`summary` |
-| `memory` | 内存对象 |
-| `registers` | `Registers`：`read(index)`、`write(index, value)`、`pc`、`cpsr`、`saved()`、`save(value)`、`mode` |
-| `mode` | 当前的 `Mode`，从 CPSR 读取 |
-| `cycles` | 自器件构建以来的周期数，包括复位 |
-| `steps` | 自上次复位以来的指令数 |
-| `spent` | 上一条指令的开销，类型为 `Cycles` |
-| `tally` | 累计总数，类型为 `Cycles`，跨复位保留 |
-| `bus.cycles` | 上一条指令的每个总线周期对应一个 `Cycle`：`kind`、`address`、`nopc`、`nbw`、`nrw`、`ntrans`、`lock`、`data`。`kind` 是未接协处理器的器件所驱动的表 3 周期类型之一：N、S 或 I，带有 `letter`、`name`、`nmreq`、`seq` 和 `touches_memory` |
-| `irq_line`, `fiq_line` | 每条中断线的电平 |
-| `on_cycle` | 在每个总线周期结束、该周期的工作完成之后以器件为参数运行的可调用对象，或 `None`。由 `Clock` 设置 |
-| `seed`, `bigend`, `lateabt` | 构造函数参数 |
+| 属性                        | 含义                                                                                                                                                                                                                                    |
+| :-------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `model`                     | `Model` 记录：`name`、`aliases`、`summary`                                                                                                                                                                                              |
+| `memory`                    | 内存对象                                                                                                                                                                                                                                |
+| `registers`                 | `Registers`：`read(index)`、`write(index, value)`、`pc`、`cpsr`、`saved()`、`save(value)`、`mode`                                                                                                                                       |
+| `mode`                      | 当前的 `Mode`，从 CPSR 读取                                                                                                                                                                                                             |
+| `cycles`                    | 自器件构建以来的周期数，包括复位                                                                                                                                                                                                        |
+| `steps`                     | 自上次复位以来的指令数                                                                                                                                                                                                                  |
+| `spent`                     | 上一条指令的开销，类型为 `Cycles`                                                                                                                                                                                                       |
+| `tally`                     | 累计总数，类型为 `Cycles`，跨复位保留                                                                                                                                                                                                   |
+| `bus.cycles`                | 上一条指令的每个总线周期对应一个 `Cycle`：`kind`、`address`、`nopc`、`nbw`、`nrw`、`ntrans`、`lock`、`data`。`kind` 是未接协处理器的器件所驱动的表 3 周期类型之一：N、S 或 I，带有 `letter`、`name`、`nmreq`、`seq` 和 `touches_memory` |
+| `irq_line`, `fiq_line`      | 每条中断线的电平                                                                                                                                                                                                                        |
+| `on_cycle`                  | 在每个总线周期结束、该周期的工作完成之后以器件为参数运行的可调用对象，或 `None`。由 `Clock` 设置                                                                                                                                        |
+| `seed`, `bigend`, `lateabt` | 构造函数参数                                                                                                                                                                                                                            |
 
 ```python
 from arm6 import Cpu, Memory, RunLimit
@@ -159,30 +159,30 @@ True 0x5a5a5a5a
 
 设置 `bigend` 后，同样的四个字节读出为两个不同的字。写入 0x2002 的字落在 0x2000。两个种子给出两个不同的上电字节。复位后 CPSR 为 `0xd3`：管理模式，I 位和 F 位置位。
 
-| 名称 | 内容 |
-|:--|:--|
-| `arm6.MODES` | 十个 `Mode` 记录，以名称为键：`usr32`、`fiq32`、`irq32`、`svc32`、`abt32`、`und32`，以及 26 位的 `usr26`、`fiq26`、`irq26`、`svc26`。每个记录都有 `bits`、`wide`、`privileged`、`bank` 和 `spsr` |
-| `arm6.VECTORS` | 七个异常向量，按名称索引，从位于 0x00 的 `reset` 到位于 0x1C 的 `fiq` |
-| `arm6.UNSET_SEED` | 未给出种子时使用的种子 |
+| 名称              | 内容                                                                                                                                                                                             |
+| :---------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `arm6.MODES`      | 十个 `Mode` 记录，以名称为键：`usr32`、`fiq32`、`irq32`、`svc32`、`abt32`、`und32`，以及 26 位的 `usr26`、`fiq26`、`irq26`、`svc26`。每个记录都有 `bits`、`wide`、`privileged`、`bank` 和 `spsr` |
+| `arm6.VECTORS`    | 七个异常向量，按名称索引，从位于 0x00 的 `reset` 到位于 0x1C 的 `fiq`                                                                                                                            |
+| `arm6.UNSET_SEED` | 未给出种子时使用的种子                                                                                                                                                                           |
 
 ### 目录与错误
 
-| 名称 | 内容 |
-|:--|:--|
-| `arm6.MODELS` | 唯一的 `Model` 记录，以 `arm60` 为键 |
-| `arm6.Model` | 一个目录条目。它拒绝任何属性写入 |
-| `arm6.Arm6Error` | 以下所有错误的基类 |
-| `arm6.UnknownModelError` | 名称不对应任何型号或名称为空时，由 `Cpu` 抛出。消息列出所有可接受的名称 |
-| `arm6.RunLimit` | 经过 `limit` 条指令而 `check` 仍不成立时，由 `run_until` 抛出 |
-| `arm6.EmptyRegisterList` | `step` 遇到未列出任何寄存器的块传送时抛出。Section 7.9 禁止这种情况，但没有说明器件会怎样做 |
-| `arm6.UnspecifiedEncoding` | `step` 遇到与 Figure 28 任何一行都不匹配的字时抛出 |
-| `arm6.NoCoprocessor` | 已公开，但从不抛出。协处理器指令会进入未定义指令陷阱，与 section 10.15 所说的未连接协处理器时的行为一致 |
-| `arm6.UnknownMode` | CPSR 的模式字段不是十种模式中的任何一种时抛出 |
-| `arm6.WaitsRequired` | 由 `Cycles.ticks(None)` 抛出 |
-| `arm6.BadWaits` | `Waits` 收到小于 1 的数值时抛出 |
-| `arm6.ClockClosed` | 在 `close()` 之后调用 `Clock.tick()` 时抛出 |
-| `arm6.Truncated` | 偏移处剩余不足四个字节时，由解码器抛出。`offset` 保存出错的位置。`disassemble` 会在那里结束列表，而不是抛出 |
-| `arm6.__version__` | 已安装的版本 |
+| 名称                       | 内容                                                                                                        |
+| :------------------------- | :---------------------------------------------------------------------------------------------------------- |
+| `arm6.MODELS`              | 唯一的 `Model` 记录，以 `arm60` 为键                                                                        |
+| `arm6.Model`               | 一个目录条目。它拒绝任何属性写入                                                                            |
+| `arm6.Arm6Error`           | 以下所有错误的基类                                                                                          |
+| `arm6.UnknownModelError`   | 名称不对应任何型号或名称为空时，由 `Cpu` 抛出。消息列出所有可接受的名称                                     |
+| `arm6.RunLimit`            | 经过 `limit` 条指令而 `check` 仍不成立时，由 `run_until` 抛出                                               |
+| `arm6.EmptyRegisterList`   | `step` 遇到未列出任何寄存器的块传送时抛出。Section 7.9 禁止这种情况，但没有说明器件会怎样做                 |
+| `arm6.UnspecifiedEncoding` | `step` 遇到与 Figure 28 任何一行都不匹配的字时抛出                                                          |
+| `arm6.NoCoprocessor`       | 已公开，但从不抛出。协处理器指令会进入未定义指令陷阱，与 section 10.15 所说的未连接协处理器时的行为一致     |
+| `arm6.UnknownMode`         | CPSR 的模式字段不是十种模式中的任何一种时抛出                                                               |
+| `arm6.WaitsRequired`       | 由 `Cycles.ticks(None)` 抛出                                                                                |
+| `arm6.BadWaits`            | `Waits` 收到小于 1 的数值时抛出                                                                             |
+| `arm6.ClockClosed`         | 在 `close()` 之后调用 `Clock.tick()` 时抛出                                                                 |
+| `arm6.Truncated`           | 偏移处剩余不足四个字节时，由解码器抛出。`offset` 保存出错的位置。`disassemble` 会在那里结束列表，而不是抛出 |
+| `arm6.__version__`         | 已安装的版本                                                                                                |
 
 ```python
 from arm6 import MODELS, Cpu, EmptyRegisterList, Memory, UnknownModelError, UnspecifiedEncoding
@@ -281,13 +281,13 @@ with Clock(cpu) as clock:
 
 第一个字是跳转到地址 8 的带链接跳转，耗费 3 个周期。2 个周期之后，计数器已经指向目标地址，而第三个周期，即第二次重新填充取指，尚未发生。`Cpu.run_for` 无法停在那里，因为它以完整指令为单位耗费周期。
 
-| Clock 调用 | 作用 | 返回值 |
-|:--|:--|:--|
-| `tick()` | 让器件运行一个总线周期。在 `close()` 之后抛出 `ClockClosed`，并重新抛出器件抛出的任何异常 | 周期计数 |
-| `run_for(cycles)` | `cycles` 个节拍 | 周期计数 |
-| `close()` | 停止线程，并恢复器件的 `on_cycle`。`with` 块会调用它 | `None` |
-| 迭代 | 每一步是一次 `tick()`，直到时钟关闭 | 周期计数 |
-| `cycles`, `closed`, `cpu` | 到目前为止的节拍数、是否已关闭、它驱动的器件 | |
+| Clock 调用                | 作用                                                                                      | 返回值   |
+| :------------------------ | :---------------------------------------------------------------------------------------- | :------- |
+| `tick()`                  | 让器件运行一个总线周期。在 `close()` 之后抛出 `ClockClosed`，并重新抛出器件抛出的任何异常 | 周期计数 |
+| `run_for(cycles)`         | `cycles` 个节拍                                                                           | 周期计数 |
+| `close()`                 | 停止线程，并恢复器件的 `on_cycle`。`with` 块会调用它                                      | `None`   |
+| 迭代                      | 每一步是一次 `tick()`，直到时钟关闭                                                       | 周期计数 |
+| `cycles`, `closed`, `cpu` | 到目前为止的节拍数、是否已关闭、它驱动的器件                                              |          |
 
 ```python
 from arm6 import Clock, ClockClosed, Cpu
@@ -426,25 +426,25 @@ print(cpu.registers.pc, cpu.mode.name, cpu.cycles, cpu.steps)
 
 尚未解决的问题见 [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md)，各文档之间的分歧见 [`conformance/divergences.json`](conformance/divergences.json)。第一个未决问题是凌驾于这一切之上的上限：这里没有任何内容基于对真实硅片的测量。
 
-| 命令 | 参数 | 退出码 |
-|:--|:--|:--|
-| `python3 arm6/doctor.py` | 无 | 所有检查都通过时为 0，否则为 1 |
-| `python3 -m conformance.quotes` | 无 | 所有可读取的引文都已定位时为 0，否则为 1。机器上没有文档时不检查任何内容，并说明这一点 |
-| `python3 -m conformance.singlestep [path]` | 语料库的 `v1` 目录，默认为 `ARM7TDMI/v1`。`--limit N` 指定每个文件的用例数，`--count` 只计数不比对，`--files` 打印需要获取的路径 | 无不一致或无语料库时为 0，有任何不一致时为 1 |
-| `python3 -m conformance.speed` | `--cycles N`，默认为 200,000，以及 `--repeats N`，默认为 7 | 高于下限时为 0，低于下限时为 1，选项错误时为 2 |
-| `python3 -m conformance.documents` | `--check` 只验证不下载，`--only SUBSTRING` 选择文档 | 所有文档都验证通过时为 0，否则为 1 |
-| `python3 -m conformance.links` | 无。它探测本 README 中的每个地址 | 除非某个地址返回 404 或 410，否则为 0 |
-| `python3 -m conformance.package <wheel>` | 一个构建好的 wheel | 所有模块都已打包且未打包任何测试时为 0，否则为 1，无参数时为 2 |
+| 命令                                       | 参数                                                                                                                             | 退出码                                                                                 |
+| :----------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------- |
+| `python3 arm6/doctor.py`                   | 无                                                                                                                               | 所有检查都通过时为 0，否则为 1                                                         |
+| `python3 -m conformance.quotes`            | 无                                                                                                                               | 所有可读取的引文都已定位时为 0，否则为 1。机器上没有文档时不检查任何内容，并说明这一点 |
+| `python3 -m conformance.singlestep [path]` | 语料库的 `v1` 目录，默认为 `ARM7TDMI/v1`。`--limit N` 指定每个文件的用例数，`--count` 只计数不比对，`--files` 打印需要获取的路径 | 无不一致或无语料库时为 0，有任何不一致时为 1                                           |
+| `python3 -m conformance.speed`             | `--cycles N`，默认为 200,000，以及 `--repeats N`，默认为 7                                                                       | 高于下限时为 0，低于下限时为 1，选项错误时为 2                                         |
+| `python3 -m conformance.documents`         | `--check` 只验证不下载，`--only SUBSTRING` 选择文档                                                                              | 所有文档都验证通过时为 0，否则为 1                                                     |
+| `python3 -m conformance.links`             | 无。它探测本 README 中的每个地址                                                                                                 | 除非某个地址返回 404 或 410，否则为 0                                                  |
+| `python3 -m conformance.package <wheel>`   | 一个构建好的 wheel                                                                                                               | 所有模块都已打包且未打包任何测试时为 0，否则为 1，无参数时为 2                         |
 
 ## 参与开发
 
-| 需求 | 位置 |
-|:--|:--|
-| 每项门禁检查及其运行顺序 | [CONTRIBUTING.md](CONTRIBUTING.md) |
-| 面向编程代理的相同内容 | [AGENTS.md](AGENTS.md) |
-| 本仓库与家族中其他仓库共享的标准 | [FAMILY.md](FAMILY.md) |
-| 缺陷报告 | [GitHub Issues](https://github.com/gufranco/arm6-python/issues) |
-| 安全报告 | [SECURITY.md](SECURITY.md) |
+| 需求                             | 位置                                                            |
+| :------------------------------- | :-------------------------------------------------------------- |
+| 每项门禁检查及其运行顺序         | [CONTRIBUTING.md](CONTRIBUTING.md)                              |
+| 面向编程代理的相同内容           | [AGENTS.md](AGENTS.md)                                          |
+| 本仓库与家族中其他仓库共享的标准 | [FAMILY.md](FAMILY.md)                                          |
+| 缺陷报告                         | [GitHub Issues](https://github.com/gufranco/arm6-python/issues) |
+| 安全报告                         | [SECURITY.md](SECURITY.md)                                      |
 
 ```bash
 uvx ruff@0.16.3 format --check .
@@ -459,11 +459,11 @@ python3 arm6/core.test.py
 
 这些文档都不可再分发，也都不在本仓库中。个别句子引用在 [`conformance/hardware.json`](conformance/hardware.json) 中，并附有其所在的页码。每行给出页数以及文件 SHA-256 的前十六个十六进制数字。
 
-| 文档 | 日期 | 页数 | SHA-256 |
-|:--|:--|--:|:--|
-| [GEC Plessey Semiconductors，*ARM60 Datasheet*，Issue 0.81](https://3dodev.com/_media/documentation/hardware/arm60_datasheet_-_gec_plessey_semiconductors.pdf) | 1993 | 83 | `315dbff7b6259a73` |
-| [Advanced RISC Machines，*ARM610 Data Sheet*，ARM DDI 0004D](https://bitsavers.org/pdf/acorn/ARM_DDI_0004D_ARM610_Data_Sheet_Aug93.pdf) | 1993-08 | 134 | `76f13ffe2bc20774` |
-| [Advanced RISC Machines，*Application Note 11: Differences Between ARM6 and Earlier ARM Processors*](https://home.marutan.net/rpcemu/Apps11vC.html) | 无日期 | 1 | `41239bc21c8e3375` |
+| 文档                                                                                                                                                           | 日期    | 页数 | SHA-256            |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------ | ---: | :----------------- |
+| [GEC Plessey Semiconductors，_ARM60 Datasheet_，Issue 0.81](https://3dodev.com/_media/documentation/hardware/arm60_datasheet_-_gec_plessey_semiconductors.pdf) | 1993    |   83 | `315dbff7b6259a73` |
+| [Advanced RISC Machines，_ARM610 Data Sheet_，ARM DDI 0004D](https://bitsavers.org/pdf/acorn/ARM_DDI_0004D_ARM610_Data_Sheet_Aug93.pdf)                        | 1993-08 |  134 | `76f13ffe2bc20774` |
+| [Advanced RISC Machines，_Application Note 11: Differences Between ARM6 and Earlier ARM Processors_](https://home.marutan.net/rpcemu/Apps11vC.html)            | 无日期  |    1 | `41239bc21c8e3375` |
 
 [`conformance/documents.json`](conformance/documents.json) 为每份文档记录完整摘要、字节数和一个可获取的地址。`python3 -m conformance.documents` 将三份文档全部下载到 git 忽略的 `docs/` 中，并拒绝摘要不符的文件。`--check` 验证已经存在的副本。清单从一个镜像获取 ARM610 数据手册，因为上面链接的地址对普通获取请求返回 403。两者提供的字节相同。
 

@@ -157,9 +157,9 @@ so the omission reads as a decision rather than an oversight.
 **The 26 bit program space configuration is not modelled.** Chapter 9 says the
 remainder of the document describes ARM60 configured for a 32 bit program and
 data space and recommends that configuration for all new designs, so that is what
-this package models. The four 26 bit *modes* are modelled, because they are
+this package models. The four 26 bit _modes_ are modelled, because they are
 reachable from a 32 bit configuration and Application Note 11 gives their
-encodings. The 26 bit *configuration*, with `prog32` LOW, is not, and neither is
+encodings. The 26 bit _configuration_, with `prog32` LOW, is not, and neither is
 the address exception vector at `0x14` that exists only in it.
 
 **No coprocessor is attached and none is modelled.** Section 10.15 states what

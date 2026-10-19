@@ -28,10 +28,10 @@ The image holds one word, `mov R0, #42`. `reset()` points the program counter at
 
 ## Install
 
-| Requirement | Version |
-|:--|:--|
-| Python | 3.12 or newer |
-| git | Any |
+| Requirement                | Version                                           |
+| :------------------------- | :------------------------------------------------ |
+| Python                     | 3.12 or newer                                     |
+| git                        | Any                                               |
 | `pdftoppm` and `tesseract` | Any, and only for `python3 -m conformance.quotes` |
 
 ```bash
@@ -56,42 +56,42 @@ Releases follow [Semantic Versioning](https://semver.org/) and are cut from the 
 
 `arm6.Cpu(model, memory=None, seed=UNSET_SEED, fill=None, bigend=False, lateabt=True)` builds one part.
 
-| Argument | Meaning |
-|:--|:--|
-| `model` | Required. `arm60`, or its alias `arm6`, in any case. There is no default |
-| `memory` | Any object with `read_byte`, `write_byte`, `read_word` and `write_word`. Left out, the part builds a `Memory` from `seed`, `fill` and `bigend` |
-| `seed` | Sets the power-on contents of the registers and of a memory the part builds |
-| `fill` | A value every register and every unwritten byte starts at instead. `fill=0` gives a quiet start |
-| `bigend` | The `bigend` pin. Passed to a memory the part builds, and ignored when `memory` is supplied |
-| `lateabt` | The `lateabt` pin, kept on the part. The abort pin is not driven, so it changes nothing |
+| Argument  | Meaning                                                                                                                                        |
+| :-------- | :--------------------------------------------------------------------------------------------------------------------------------------------- |
+| `model`   | Required. `arm60`, or its alias `arm6`, in any case. There is no default                                                                       |
+| `memory`  | Any object with `read_byte`, `write_byte`, `read_word` and `write_word`. Left out, the part builds a `Memory` from `seed`, `fill` and `bigend` |
+| `seed`    | Sets the power-on contents of the registers and of a memory the part builds                                                                    |
+| `fill`    | A value every register and every unwritten byte starts at instead. `fill=0` gives a quiet start                                                |
+| `bigend`  | The `bigend` pin. Passed to a memory the part builds, and ignored when `memory` is supplied                                                    |
+| `lateabt` | The `lateabt` pin, kept on the part. The abort pin is not driven, so it changes nothing                                                        |
 
 ### Calls
 
-| Call | Effect | Returns |
-|:--|:--|:--|
-| `reset(low_cycles=2)` | Section 6.3.6: supervisor mode, both interrupt disables set, a fetch from address zero. Holds the reset line for `low_cycles` dummy fetches, never fewer than 2, then spends 3 on exception entry, so the default costs 5 cycles | The part |
-| `step()` | One instruction, or the entry to a pending FIQ or IRQ | The cycles it cost, as an `int` |
-| `run_for(cycles)` | Whole instructions until at least `cycles` have been spent. An instruction is never split, so it may overshoot | The cycles spent |
-| `run_until(check, limit=None)` | Steps while `check(cpu)` is false. Raises `RunLimit` after `limit` instructions | The part |
-| `held()` | Whether the part has stopped advancing. Nothing stops this part | `False` |
-| `irq(level=True)`, `fiq(level=True)` | Sets the line. The next `step()` takes it when its disable bit is clear | Whether it would be taken now |
+| Call                                 | Effect                                                                                                                                                                                                                           | Returns                         |
+| :----------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------ |
+| `reset(low_cycles=2)`                | Section 6.3.6: supervisor mode, both interrupt disables set, a fetch from address zero. Holds the reset line for `low_cycles` dummy fetches, never fewer than 2, then spends 3 on exception entry, so the default costs 5 cycles | The part                        |
+| `step()`                             | One instruction, or the entry to a pending FIQ or IRQ                                                                                                                                                                            | The cycles it cost, as an `int` |
+| `run_for(cycles)`                    | Whole instructions until at least `cycles` have been spent. An instruction is never split, so it may overshoot                                                                                                                   | The cycles spent                |
+| `run_until(check, limit=None)`       | Steps while `check(cpu)` is false. Raises `RunLimit` after `limit` instructions                                                                                                                                                  | The part                        |
+| `held()`                             | Whether the part has stopped advancing. Nothing stops this part                                                                                                                                                                  | `False`                         |
+| `irq(level=True)`, `fiq(level=True)` | Sets the line. The next `step()` takes it when its disable bit is clear                                                                                                                                                          | Whether it would be taken now   |
 
 ### State
 
-| Attribute | Meaning |
-|:--|:--|
-| `model` | The `Model` record: `name`, `aliases`, `summary` |
-| `memory` | The memory object |
-| `registers` | The `Registers`: `read(index)`, `write(index, value)`, `pc`, `cpsr`, `saved()`, `save(value)`, `mode` |
-| `mode` | The current `Mode`, read from the CPSR |
-| `cycles` | Cycles since the part was built, reset included |
-| `steps` | Instructions since the last reset |
-| `spent` | The last instruction's cost as `Cycles` |
-| `tally` | The running total as `Cycles`, kept across resets |
-| `bus.cycles` | One `Cycle` per bus cycle of the last instruction: `kind`, `address`, `nopc`, `nbw`, `nrw`, `ntrans`, `lock`, `data`. `kind` is one of the Table 3 cycle types a part with no coprocessor attached drives: N, S or I, with `letter`, `name`, `nmreq`, `seq` and `touches_memory` |
-| `irq_line`, `fiq_line` | The level of each interrupt line |
-| `on_cycle` | A callable run at the end of every bus cycle, after that cycle's work, with the part as its argument, or `None`. `Clock` sets it |
-| `seed`, `bigend`, `lateabt` | The constructor arguments |
+| Attribute                   | Meaning                                                                                                                                                                                                                                                                          |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `model`                     | The `Model` record: `name`, `aliases`, `summary`                                                                                                                                                                                                                                 |
+| `memory`                    | The memory object                                                                                                                                                                                                                                                                |
+| `registers`                 | The `Registers`: `read(index)`, `write(index, value)`, `pc`, `cpsr`, `saved()`, `save(value)`, `mode`                                                                                                                                                                            |
+| `mode`                      | The current `Mode`, read from the CPSR                                                                                                                                                                                                                                           |
+| `cycles`                    | Cycles since the part was built, reset included                                                                                                                                                                                                                                  |
+| `steps`                     | Instructions since the last reset                                                                                                                                                                                                                                                |
+| `spent`                     | The last instruction's cost as `Cycles`                                                                                                                                                                                                                                          |
+| `tally`                     | The running total as `Cycles`, kept across resets                                                                                                                                                                                                                                |
+| `bus.cycles`                | One `Cycle` per bus cycle of the last instruction: `kind`, `address`, `nopc`, `nbw`, `nrw`, `ntrans`, `lock`, `data`. `kind` is one of the Table 3 cycle types a part with no coprocessor attached drives: N, S or I, with `letter`, `name`, `nmreq`, `seq` and `touches_memory` |
+| `irq_line`, `fiq_line`      | The level of each interrupt line                                                                                                                                                                                                                                                 |
+| `on_cycle`                  | A callable run at the end of every bus cycle, after that cycle's work, with the part as its argument, or `None`. `Clock` sets it                                                                                                                                                 |
+| `seed`, `bigend`, `lateabt` | The constructor arguments                                                                                                                                                                                                                                                        |
 
 ```python
 from arm6 import Cpu, Memory, RunLimit
@@ -159,30 +159,30 @@ True 0x5a5a5a5a
 
 The same four bytes read as two different words once `bigend` is set. A word written at 0x2002 lands at 0x2000. Two seeds give two different power-on bytes. After a reset the CPSR holds `0xd3`: supervisor mode with the I and F bits set.
 
-| Name | Content |
-|:--|:--|
-| `arm6.MODES` | The ten `Mode` records, keyed by name: `usr32`, `fiq32`, `irq32`, `svc32`, `abt32`, `und32`, and the 26-bit `usr26`, `fiq26`, `irq26`, `svc26`. Each has `bits`, `wide`, `privileged`, `bank` and `spsr` |
-| `arm6.VECTORS` | The seven exception vectors by name, from `reset` at 0x00 to `fiq` at 0x1C |
-| `arm6.UNSET_SEED` | The seed used when none is given |
+| Name              | Content                                                                                                                                                                                                  |
+| :---------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `arm6.MODES`      | The ten `Mode` records, keyed by name: `usr32`, `fiq32`, `irq32`, `svc32`, `abt32`, `und32`, and the 26-bit `usr26`, `fiq26`, `irq26`, `svc26`. Each has `bits`, `wide`, `privileged`, `bank` and `spsr` |
+| `arm6.VECTORS`    | The seven exception vectors by name, from `reset` at 0x00 to `fiq` at 0x1C                                                                                                                               |
+| `arm6.UNSET_SEED` | The seed used when none is given                                                                                                                                                                         |
 
 ### Catalogue and errors
 
-| Name | Content |
-|:--|:--|
-| `arm6.MODELS` | The one `Model` record, keyed by `arm60` |
-| `arm6.Model` | A catalogue entry. It refuses every attribute write |
-| `arm6.Arm6Error` | The base of every error below |
-| `arm6.UnknownModelError` | Raised by `Cpu` for a name no model goes by, and for an empty name. The message lists every name accepted |
-| `arm6.RunLimit` | Raised by `run_until` when `limit` instructions pass without `check` holding |
-| `arm6.EmptyRegisterList` | Raised by `step` on a block transfer with no register listed. Section 7.9 forbids it and does not say what the part does |
-| `arm6.UnspecifiedEncoding` | Raised by `step` on a word that matches no row of Figure 28 |
-| `arm6.NoCoprocessor` | Published and never raised. A coprocessor instruction takes the undefined instruction trap, as section 10.15 says it does with no coprocessor attached |
-| `arm6.UnknownMode` | Raised when the CPSR mode field holds none of the ten modes |
-| `arm6.WaitsRequired` | Raised by `Cycles.ticks(None)` |
-| `arm6.BadWaits` | Raised by `Waits` for a figure below 1 |
-| `arm6.ClockClosed` | Raised by `Clock.tick()` after `close()` |
-| `arm6.Truncated` | Raised by the decoder when fewer than four bytes are left at the offset. `offset` holds where. `disassemble` ends its listing there instead of raising |
-| `arm6.__version__` | The installed version |
+| Name                       | Content                                                                                                                                                |
+| :------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `arm6.MODELS`              | The one `Model` record, keyed by `arm60`                                                                                                               |
+| `arm6.Model`               | A catalogue entry. It refuses every attribute write                                                                                                    |
+| `arm6.Arm6Error`           | The base of every error below                                                                                                                          |
+| `arm6.UnknownModelError`   | Raised by `Cpu` for a name no model goes by, and for an empty name. The message lists every name accepted                                              |
+| `arm6.RunLimit`            | Raised by `run_until` when `limit` instructions pass without `check` holding                                                                           |
+| `arm6.EmptyRegisterList`   | Raised by `step` on a block transfer with no register listed. Section 7.9 forbids it and does not say what the part does                               |
+| `arm6.UnspecifiedEncoding` | Raised by `step` on a word that matches no row of Figure 28                                                                                            |
+| `arm6.NoCoprocessor`       | Published and never raised. A coprocessor instruction takes the undefined instruction trap, as section 10.15 says it does with no coprocessor attached |
+| `arm6.UnknownMode`         | Raised when the CPSR mode field holds none of the ten modes                                                                                            |
+| `arm6.WaitsRequired`       | Raised by `Cycles.ticks(None)`                                                                                                                         |
+| `arm6.BadWaits`            | Raised by `Waits` for a figure below 1                                                                                                                 |
+| `arm6.ClockClosed`         | Raised by `Clock.tick()` after `close()`                                                                                                               |
+| `arm6.Truncated`           | Raised by the decoder when fewer than four bytes are left at the offset. `offset` holds where. `disassemble` ends its listing there instead of raising |
+| `arm6.__version__`         | The installed version                                                                                                                                  |
 
 ```python
 from arm6 import MODELS, Cpu, EmptyRegisterList, Memory, UnknownModelError, UnspecifiedEncoding
@@ -281,13 +281,13 @@ with Clock(cpu) as clock:
 
 The first word is a branch with link to address 8, which costs 3 cycles. After 2 the counter already points at the destination and the third cycle, the second refill fetch, has not happened. `Cpu.run_for` cannot stop there, because it spends whole instructions.
 
-| Clock call | Effect | Returns |
-|:--|:--|:--|
-| `tick()` | Lets the part run one bus cycle. Raises `ClockClosed` after `close()`, and re-raises anything the part raised | The cycle count |
-| `run_for(cycles)` | `cycles` ticks | The cycle count |
-| `close()` | Stops the thread and restores the part's `on_cycle`. A `with` block calls it | `None` |
-| Iteration | Each step is one `tick()`, until the clock is closed | The cycle count |
-| `cycles`, `closed`, `cpu` | Ticks so far, whether it is closed, the part it drives | |
+| Clock call                | Effect                                                                                                        | Returns         |
+| :------------------------ | :------------------------------------------------------------------------------------------------------------ | :-------------- |
+| `tick()`                  | Lets the part run one bus cycle. Raises `ClockClosed` after `close()`, and re-raises anything the part raised | The cycle count |
+| `run_for(cycles)`         | `cycles` ticks                                                                                                | The cycle count |
+| `close()`                 | Stops the thread and restores the part's `on_cycle`. A `with` block calls it                                  | `None`          |
+| Iteration                 | Each step is one `tick()`, until the clock is closed                                                          | The cycle count |
+| `cycles`, `closed`, `cpu` | Ticks so far, whether it is closed, the part it drives                                                        |                 |
 
 ```python
 from arm6 import Clock, ClockClosed, Cpu
@@ -426,25 +426,25 @@ Three checks hold it, and none of them compares the package with itself.
 
 What is not settled is in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md), and where the documents part ways is in [`conformance/divergences.json`](conformance/divergences.json). The first open question is the ceiling above all of it: nothing here rests on a measurement of real silicon.
 
-| Command | Arguments | Exit codes |
-|:--|:--|:--|
-| `python3 arm6/doctor.py` | None | 0 when every check passes, 1 otherwise |
-| `python3 -m conformance.quotes` | None | 0 when every quote that could be read was placed, 1 otherwise. With no document on the machine it checks nothing and says so |
-| `python3 -m conformance.singlestep [path]` | The corpus `v1` directory, `ARM7TDMI/v1` by default. `--limit N` cases per file, `--count` to count without comparing, `--files` to print the paths to fetch | 0 with no disagreement or no corpus, 1 on any disagreement |
-| `python3 -m conformance.speed` | `--cycles N`, 200,000 by default, and `--repeats N`, 7 by default | 0 above the floor, 1 below it, 2 on a bad option |
-| `python3 -m conformance.documents` | `--check` to verify without fetching, `--only SUBSTRING` to pick documents | 0 when every document verifies, 1 otherwise |
-| `python3 -m conformance.links` | None. It probes every address in this README | 0 unless an address answers 404 or 410 |
-| `python3 -m conformance.package <wheel>` | A built wheel | 0 when every module is shipped and no test is, 1 otherwise, 2 with no argument |
+| Command                                    | Arguments                                                                                                                                                    | Exit codes                                                                                                                   |
+| :----------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| `python3 arm6/doctor.py`                   | None                                                                                                                                                         | 0 when every check passes, 1 otherwise                                                                                       |
+| `python3 -m conformance.quotes`            | None                                                                                                                                                         | 0 when every quote that could be read was placed, 1 otherwise. With no document on the machine it checks nothing and says so |
+| `python3 -m conformance.singlestep [path]` | The corpus `v1` directory, `ARM7TDMI/v1` by default. `--limit N` cases per file, `--count` to count without comparing, `--files` to print the paths to fetch | 0 with no disagreement or no corpus, 1 on any disagreement                                                                   |
+| `python3 -m conformance.speed`             | `--cycles N`, 200,000 by default, and `--repeats N`, 7 by default                                                                                            | 0 above the floor, 1 below it, 2 on a bad option                                                                             |
+| `python3 -m conformance.documents`         | `--check` to verify without fetching, `--only SUBSTRING` to pick documents                                                                                   | 0 when every document verifies, 1 otherwise                                                                                  |
+| `python3 -m conformance.links`             | None. It probes every address in this README                                                                                                                 | 0 unless an address answers 404 or 410                                                                                       |
+| `python3 -m conformance.package <wheel>`   | A built wheel                                                                                                                                                | 0 when every module is shipped and no test is, 1 otherwise, 2 with no argument                                               |
 
 ## Working on it
 
-| Need | Where |
-|:--|:--|
-| Every gate and the order to run them | [CONTRIBUTING.md](CONTRIBUTING.md) |
-| The same material for a coding agent | [AGENTS.md](AGENTS.md) |
-| The standard this repository shares with the rest of the family | [FAMILY.md](FAMILY.md) |
-| Bug reports | [GitHub Issues](https://github.com/gufranco/arm6-python/issues) |
-| Security reports | [SECURITY.md](SECURITY.md) |
+| Need                                                            | Where                                                           |
+| :-------------------------------------------------------------- | :-------------------------------------------------------------- |
+| Every gate and the order to run them                            | [CONTRIBUTING.md](CONTRIBUTING.md)                              |
+| The same material for a coding agent                            | [AGENTS.md](AGENTS.md)                                          |
+| The standard this repository shares with the rest of the family | [FAMILY.md](FAMILY.md)                                          |
+| Bug reports                                                     | [GitHub Issues](https://github.com/gufranco/arm6-python/issues) |
+| Security reports                                                | [SECURITY.md](SECURITY.md)                                      |
 
 ```bash
 uvx ruff@0.16.3 format --check .
@@ -459,11 +459,11 @@ Each module has a test file beside it, named after it, and each runs on its own 
 
 None of these documents is redistributable, and none is in this repository. Individual sentences are quoted in [`conformance/hardware.json`](conformance/hardware.json) with the page they are printed on. Each row gives the page count and the first sixteen hex digits of the file's SHA-256.
 
-| Document | Date | Pages | SHA-256 |
-|:--|:--|--:|:--|
-| [GEC Plessey Semiconductors, *ARM60 Datasheet*, Issue 0.81](https://3dodev.com/_media/documentation/hardware/arm60_datasheet_-_gec_plessey_semiconductors.pdf) | 1993 | 83 | `315dbff7b6259a73` |
-| [Advanced RISC Machines, *ARM610 Data Sheet*, ARM DDI 0004D](https://bitsavers.org/pdf/acorn/ARM_DDI_0004D_ARM610_Data_Sheet_Aug93.pdf) | 1993-08 | 134 | `76f13ffe2bc20774` |
-| [Advanced RISC Machines, *Application Note 11: Differences Between ARM6 and Earlier ARM Processors*](https://home.marutan.net/rpcemu/Apps11vC.html) | Undated | 1 | `41239bc21c8e3375` |
+| Document                                                                                                                                                       | Date    | Pages | SHA-256            |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------ | ----: | :----------------- |
+| [GEC Plessey Semiconductors, _ARM60 Datasheet_, Issue 0.81](https://3dodev.com/_media/documentation/hardware/arm60_datasheet_-_gec_plessey_semiconductors.pdf) | 1993    |    83 | `315dbff7b6259a73` |
+| [Advanced RISC Machines, _ARM610 Data Sheet_, ARM DDI 0004D](https://bitsavers.org/pdf/acorn/ARM_DDI_0004D_ARM610_Data_Sheet_Aug93.pdf)                        | 1993-08 |   134 | `76f13ffe2bc20774` |
+| [Advanced RISC Machines, _Application Note 11: Differences Between ARM6 and Earlier ARM Processors_](https://home.marutan.net/rpcemu/Apps11vC.html)            | Undated |     1 | `41239bc21c8e3375` |
 
 [`conformance/documents.json`](conformance/documents.json) carries the full digest, the byte count and a fetchable address for each. `python3 -m conformance.documents` downloads all three into `docs/`, which git ignores, and refuses any file whose digest differs. `--check` verifies the copies already there. The manifest fetches the ARM610 data sheet from a mirror, because the address linked above answers a plain fetch with 403. Both serve the same bytes.
 
