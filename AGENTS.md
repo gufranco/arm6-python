@@ -93,14 +93,12 @@ set would carry across unchanged; the bus would not.
 
 ## Test cartridges
 
-[`conformance/testroms.json`](conformance/testroms.json) lists one image, keyed
-by its SHA-256 and never committed: the coprocessor program dump in
-`snes-roms/5 Tools & Service Test Carts/CPU/` in the local library. Nothing
-here runs it and nothing here reads it, so there is no runner and no command.
-The program finds its program, data, work memory and command ports through
-the coprocessor's memory map, which this member does not model, and it reports
-no verdict of its own. It is `hosted` and waits on `snes-st-python`, the member
-that builds that map around this core.
+[`conformance/testroms.json`](conformance/testroms.json) lists no image, and
+says why under `none`: no test program exercises this core. The coprocessor
+program dump in `snes-roms/5 Tools & Service Test Carts/CPU/` in the local
+library is that coprocessor's firmware, not a test. It reports no verdict, and
+it runs only inside the memory map and command ports `snes-st-python` builds
+around this core, which is where it is run.
 
 The ARM7TDMI corpus pinned in
 [`conformance/suites.json`](conformance/suites.json) is a recorded state corpus
