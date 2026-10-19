@@ -1,0 +1,13 @@
+{
+  "cartridges": [
+    {
+      "id": "coprocessor-program-arm60",
+      "title": "A program dump for a coprocessor built around this core",
+      "sha256": "6df209ab5d2524d1839c038be400ae5eb20dafc14a3771a3239cd9e8acd53806",
+      "source": "snes-roms/5 Tools & Service Test Carts/CPU/ in the local library, the 163840-byte file with this digest: 131072 bytes of program, then 32768 of data",
+      "exercises": "Every instruction the program executes on the ARM60 this member models, and what each one costs. It runs only inside the coprocessor's memory map, which places its program, data, work memory and three command ports. The core alone has none of those, so it would execute against empty memory, wait for a command nobody sends, and report nothing",
+      "outcome": "hosted",
+      "needs": "snes-st-python"
+    }
+  ]
+}
