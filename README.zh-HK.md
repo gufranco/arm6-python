@@ -8,7 +8,7 @@
 [![Release](https://img.shields.io/github/v/release/gufranco/arm6-python)](https://github.com/gufranco/arm6-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-比對 **424,220** 個錄製案例，**0** 處不一致，**62** 句引文定位到所引用的頁面，**1** 個型號，**1,130** 個測試，**100%** 語句及分支覆蓋率，無任何依賴
+比對 **424,220** 個錄製案例，**0** 處不一致，**62** 句引文定位到所引用的頁面，**1** 個型號，**1,181** 個測試，**100%** 語句及分支覆蓋率，無任何依賴
 
 ```python
 from arm6 import Cpu, Memory
@@ -426,15 +426,15 @@ print(cpu.registers.pc, cpu.mode.name, cpu.cycles, cpu.steps)
 
 尚未確定的問題列於 [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md)，各文件之間的分歧列於 [`conformance/divergences.json`](conformance/divergences.json)。第一個未解問題是凌駕於這一切之上的上限：這裏沒有任何內容建基於對真實晶片的測量。
 
-| 命令                                       | 參數                                                                                                                             | 退出碼                                                                                 |
-| :----------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------- |
-| `python3 arm6/doctor.py`                   | 無                                                                                                                               | 所有檢查通過時為 0，否則為 1                                                           |
-| `python3 -m conformance.quotes`            | 無                                                                                                                               | 所有可讀取的引文均已定位時為 0，否則為 1。機器上沒有文件時，它不檢查任何內容並如實說明 |
-| `python3 -m conformance.singlestep [path]` | 案例集的 `v1` 目錄，預設為 `ARM7TDMI/v1`。`--limit N` 限制每個檔案的案例數，`--count` 只計數不比對，`--files` 輸出需要取得的路徑 | 沒有不一致或沒有案例集時為 0，有任何不一致時為 1                                       |
-| `python3 -m conformance.speed`             | `--cycles N`，預設 200,000，以及 `--repeats N`，預設 7                                                                           | 高於下限時為 0，低於下限時為 1，選項錯誤時為 2                                         |
-| `python3 -m conformance.documents`         | `--check` 只驗證不下載，`--only SUBSTRING` 選擇文件                                                                              | 所有文件驗證通過時為 0，否則為 1                                                       |
-| `python3 -m conformance.links`             | 無。它會探測本 README 中的每個地址                                                                                               | 0，除非有地址返回 404 或 410                                                           |
-| `python3 -m conformance.package <wheel>`   | 一個已建置的 wheel                                                                                                               | 所有模組均已包含且不含任何測試時為 0，否則為 1，沒有參數時為 2                         |
+| 命令                                       | 參數                                                                                                                                      | 退出碼                                                                                 |
+| :----------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------- |
+| `python3 arm6/doctor.py`                   | 無                                                                                                                                        | 所有檢查通過時為 0，否則為 1                                                           |
+| `python3 -m conformance.quotes`            | 無                                                                                                                                        | 所有可讀取的引文均已定位時為 0，否則為 1。機器上沒有文件時，它不檢查任何內容並如實說明 |
+| `python3 -m conformance.singlestep [path]` | 案例集的 `v1` 目錄，預設為 `external/ARM7TDMI/v1`。`--limit N` 限制每個檔案的案例數，`--count` 只計數不比對，`--files` 輸出需要取得的路徑 | 沒有不一致或沒有案例集時為 0，有任何不一致時為 1                                       |
+| `python3 -m conformance.speed`             | `--cycles N`，預設 200,000，以及 `--repeats N`，預設 7                                                                                    | 高於下限時為 0，低於下限時為 1，選項錯誤時為 2                                         |
+| `python3 -m conformance.documents`         | `--check` 只驗證不下載，`--only SUBSTRING` 選擇文件                                                                                       | 所有文件驗證通過時為 0，否則為 1                                                       |
+| `python3 -m conformance.links`             | 無。它會探測本 README 中的每個地址                                                                                                        | 0，除非有地址返回 404 或 410                                                           |
+| `python3 -m conformance.package <wheel>`   | 一個已建置的 wheel                                                                                                                        | 所有模組均已包含且不含任何測試時為 0，否則為 1，沒有參數時為 2                         |
 
 ## 參與開發
 

@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any, NamedTuple
 
 ROOT = Path(__file__).resolve().parent.parent
+
+CORPUS = ROOT / "external" / "ARM7TDMI" / "v1"
 sys.path.insert(0, str(ROOT))
 
 from arm6 import psr  # noqa: E402
@@ -381,7 +383,7 @@ def main(argv: Sequence[str] = (), say: Callable[[str], object] = print) -> int:
         at = rest.index("--limit")
         limit = int(rest[at + 1])
         del rest[at : at + 2]
-    where = Path(rest[0]) if rest else Path("ARM7TDMI/v1")
+    where = Path(rest[0]) if rest else CORPUS
     if not where.is_dir():
         for line in report(Tally()):
             say(line)

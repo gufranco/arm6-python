@@ -150,7 +150,7 @@ jobs:
         id: cache
         uses: actions/cache@v6
         with:
-          path: ~/.cache/arm7tdmi
+          path: external/ARM7TDMI
           key: arm7tdmi-${{ hashFiles('conformance/suites.json') }}
 
       - name: Fetch the recorded cases
@@ -165,22 +165,22 @@ jobs:
           PY
           )
           { read -r repository; read -r commit; } <<< "${suite}"
-          mkdir -p ~/.cache/arm7tdmi
-          git init -q ~/.cache/arm7tdmi
-          git -C ~/.cache/arm7tdmi remote add origin "${repository}"
-          git -C ~/.cache/arm7tdmi config core.sparseCheckout true
-          git -C ~/.cache/arm7tdmi sparse-checkout init --no-cone
-          python -m conformance.singlestep --files > ~/.cache/arm7tdmi/.git/info/sparse-checkout
-          git -C ~/.cache/arm7tdmi fetch --depth=1 --filter=blob:none origin "${commit}"
-          git -C ~/.cache/arm7tdmi checkout -q FETCH_HEAD
+          mkdir -p external/ARM7TDMI
+          git init -q external/ARM7TDMI
+          git -C external/ARM7TDMI remote add origin "${repository}"
+          git -C external/ARM7TDMI config core.sparseCheckout true
+          git -C external/ARM7TDMI sparse-checkout init --no-cone
+          python -m conformance.singlestep --files > external/ARM7TDMI/.git/info/sparse-checkout
+          git -C external/ARM7TDMI fetch --depth=1 --filter=blob:none origin "${commit}"
+          git -C external/ARM7TDMI checkout -q FETCH_HEAD
         shell: bash
 
       - name: Compare against the cases the filter keeps, a slice on a pull request
         run: |
           if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
-            python -m conformance.singlestep ~/.cache/arm7tdmi/v1 --limit 2000
+            python -m conformance.singlestep external/ARM7TDMI/v1 --limit 2000
           else
-            python -m conformance.singlestep ~/.cache/arm7tdmi/v1
+            python -m conformance.singlestep external/ARM7TDMI/v1
           fi
         shell: bash
 

@@ -105,6 +105,27 @@ The ARM7TDMI corpus pinned in
 rather than an image, so it is not listed there, and it remains the external
 check on this core's behaviour.
 
+## Files kept in `external/`
+
+Everything this member reads and may not ship sits in `external/`, which git
+ignores and Dropbox is told to leave alone, per FAMILY.md's "Where the files a
+member reads are kept". [`artifacts.manifest.json`](artifacts.manifest.json)
+names it by size, CRC32, MD5, SHA-1 and SHA-256:
+
+- `external/ARM7TDMI`, the SingleStepTests corpus, a sparse git checkout at the
+  commit [`conformance/suites.json`](conformance/suites.json) pins, holding the
+  files `python3 -m conformance.singlestep --files` lists. A test holds its
+  commit to that record.
+
+```bash
+python3 -m conformance.external
+python3 -m conformance.external --describe external/<file>
+```
+
+The first says which are here, verified, missing or wrong. The second prints
+the manifest entry for a file being added, which gets its entry in the same
+change.
+
 ## Every gate, in the order to run them
 
 ```bash
@@ -132,7 +153,7 @@ And the runs that report what they could not check rather than passing quietly:
 
 ```bash
 python3 -m conformance.quotes
-python3 -m conformance.singlestep path/to/ARM7TDMI/v1
+python3 -m conformance.singlestep external/ARM7TDMI/v1
 python3 arm6/doctor.py
 ```
 
@@ -223,6 +244,7 @@ conformance/
   family_*.test.py the family standard, held to this repository, one topic a file
   family_member.py what this member answers to them
   family_shared.py what more than one of them reads
+  external.py       which files in external/ are here, verified, missing or wrong
   hardware.json   every fact, with the sentence it came from and its page
   hardware.test.py the facts no test beside a module already held
   printed.py      reads a fact out of hardware.json by its key, for the tests that hold it
@@ -234,6 +256,8 @@ conformance/
   links.py        the weekly check that every cited address still answers
   documents.json  every document by digest, byte count and fetchable address
   documents.py    brings them down into docs/, and refuses anything that differs
+external/           the ARM7TDMI corpus checkout, never committed
+artifacts.manifest.json  every file in external/, by size and every digest
 ```
 
 ## Things that will bite you

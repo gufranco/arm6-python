@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import struct
 import sys
 import tempfile
@@ -209,6 +210,21 @@ class TheReportTest(unittest.TestCase):
 
 
 class ThePinTest(unittest.TestCase):
+    def test_the_manifest_pins_the_corpus_at_the_commit_the_definition_names(self) -> None:
+        # Arrange
+        manifest = json.loads((ROOT / "artifacts.manifest.json").read_text())["external"]
+        suites = json.loads((ROOT / "conformance" / "suites.json").read_text())["suites"]
+
+        # Act
+        pinned = {
+            one["repository"]: one["commit"]
+            for one in manifest.values()
+            if one.get("kind") == "checkout"
+        }
+
+        # Assert
+        self.assertEqual(pinned, {suite["repository"]: suite["commit"] for suite in suites})
+
     def test_the_record_names_a_repository(self) -> None:
         held = singlestep.pinned()["suites"][0]
 
