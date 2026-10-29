@@ -4,9 +4,11 @@ Pythonで書かれたARM60プロセッサです。1命令または1バスサイ�
 
 [English](README.md) | 日本語 | [简体中文](README.zh-Hans.md) | [繁體中文（香港）](README.zh-HK.md)
 
-[![CI](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/gufranco/arm6-python)](https://github.com/gufranco/arm6-python/releases)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![ci](https://img.shields.io/github/actions/workflow/status/gufranco/arm6-python/ci.yml?branch=main&style=flat-square&label=ci)](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/gufranco/arm6-python?style=flat-square&label=release)](https://github.com/gufranco/arm6-python/releases/latest)
+[![coverage](https://img.shields.io/badge/coverage-100%25-brightgreen?style=flat-square)](https://github.com/gufranco/arm6-python/actions/workflows/ci.yml)
+[![openssf scorecard](https://img.shields.io/ossf-scorecard/github.com/gufranco/arm6-python?style=flat-square&label=openssf%20scorecard)](https://scorecard.dev/viewer/?uri=github.com/gufranco/arm6-python)
+[![license](https://img.shields.io/github/license/gufranco/arm6-python?style=flat-square&label=license)](LICENSE)
 
 記録ケース**424,220**件を比較、不一致**0**件、引用文**62**件を出典ページ上で照合、パーツ**1**種、テスト**1,183**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
 
