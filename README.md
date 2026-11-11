@@ -10,7 +10,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![openssf scorecard](https://img.shields.io/ossf-scorecard/github.com/gufranco/arm6-python?style=flat-square&label=openssf%20scorecard)](https://scorecard.dev/viewer/?uri=github.com/gufranco/arm6-python)
 [![license](https://img.shields.io/github/license/gufranco/arm6-python?style=flat-square&label=license)](LICENSE)
 
-**424,220** recorded cases compared, **0** disagreements, **62** quoted sentences placed on the page they cite, **1** part, **1,183** tests, **100%** statement and branch coverage, no dependencies
+**424,220** recorded cases compared, **0** disagreements, **62** quoted sentences placed on the page they cite, **1** part, **1,184** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from arm6 import Cpu, Memory

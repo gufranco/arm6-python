@@ -10,7 +10,7 @@ Pythonで書かれたARM60プロセッサです。1命令または1バスサイ�
 [![openssf scorecard](https://img.shields.io/ossf-scorecard/github.com/gufranco/arm6-python?style=flat-square&label=openssf%20scorecard)](https://scorecard.dev/viewer/?uri=github.com/gufranco/arm6-python)
 [![license](https://img.shields.io/github/license/gufranco/arm6-python?style=flat-square&label=license)](LICENSE)
 
-記録ケース**424,220**件を比較、不一致**0**件、引用文**62**件を出典ページ上で照合、パーツ**1**種、テスト**1,183**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
+記録ケース**424,220**件を比較、不一致**0**件、引用文**62**件を出典ページ上で照合、パーツ**1**種、テスト**1,184**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
 
 ```python
 from arm6 import Cpu, Memory
