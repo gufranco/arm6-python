@@ -10,7 +10,7 @@
 [![openssf scorecard](https://img.shields.io/ossf-scorecard/github.com/gufranco/arm6-python?style=flat-square&label=openssf%20scorecard)](https://scorecard.dev/viewer/?uri=github.com/gufranco/arm6-python)
 [![license](https://img.shields.io/github/license/gufranco/arm6-python?style=flat-square&label=license)](LICENSE)
 
-已比对 **424,220** 个录制用例，**0** 处不一致，**62** 句引文已定位到所引用的页面，**1** 个器件，**1,183** 个测试，**100%** 语句与分支覆盖率，无依赖
+已比对 **424,220** 个录制用例，**0** 处不一致，**62** 句引文已定位到所引用的页面，**1** 个器件，**1,184** 个测试，**100%** 语句与分支覆盖率，无依赖
 
 ```python
 from arm6 import Cpu, Memory
